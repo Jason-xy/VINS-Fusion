@@ -26,7 +26,7 @@ NVIDIA Jetson Xavier NX
 cd $(PATH_TO_YOUR_ROS2_WS)/src
 # clone source code here
 cd ..
-colcon build --symlink-install
+colcon build --symlink-install --allow-overriding cv_bridge
 ```
 
 ### Run
