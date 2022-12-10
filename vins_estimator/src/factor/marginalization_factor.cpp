@@ -82,16 +82,21 @@ MarginalizationInfo::~MarginalizationInfo()
     //ROS_WARN("release marginlizationinfo");
     
     for (auto it = parameter_block_data.begin(); it != parameter_block_data.end(); ++it)
+    {
         delete it->second;
-
+        it->second = nullptr;
+    }
+    
     for (int i = 0; i < (int)factors.size(); i++)
     {
 
         delete[] factors[i]->raw_jacobians;
+        factors[i]->raw_jacobians = nullptr;
         
         delete factors[i]->cost_function;
+        factors[i]->cost_function = nullptr;
 
-        delete factors[i];
+        factors[i] = nullptr;
     }
 }
 
@@ -264,7 +269,7 @@ void MarginalizationInfo::marginalize()
         if (ret != 0)
         {
             ROS_WARN("pthread_create error");
-            ROS_BREAK();
+            // ROS_BREAK();
         }
     }
     for( int i = NUM_THREADS - 1; i >= 0; i--)  

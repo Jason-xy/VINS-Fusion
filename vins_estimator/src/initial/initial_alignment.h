@@ -14,12 +14,18 @@
 #include <iostream>
 #include "../factor/imu_factor.h"
 #include "../utility/utility.h"
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <map>
 #include "../estimator/feature_manager.h"
 
 using namespace Eigen;
 using namespace std;
+
+#define ROS_INFO RCUTILS_LOG_INFO
+#define ROS_WARN RCUTILS_LOG_WARN
+#define ROS_DEBUG RCUTILS_LOG_DEBUG
+#define ROS_ERROR RCUTILS_LOG_ERROR
+
 
 class ImageFrame
 {

@@ -9,36 +9,39 @@
  * Author: Qin Tong (qintonguav@gmail.com)
  *******************************************************/
 
-#include "ros/ros.h"
+#include <rclcpp/rclcpp.hpp>
 #include "globalOpt.h"
-#include <sensor_msgs/NavSatFix.h>
-#include <nav_msgs/Odometry.h>
-#include <nav_msgs/Path.h>
+#include <sensor_msgs/msg/nav_sat_fix.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+#include <nav_msgs/msg/path.hpp>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Geometry>
 #include <iostream>
 #include <stdio.h>
-#include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
+#include <visualization_msgs/msg/marker.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 #include <fstream>
 #include <queue>
 #include <mutex>
+#include <functional>
 
 GlobalOptimization globalEstimator;
-ros::Publisher pub_global_odometry, pub_global_path, pub_car;
-nav_msgs::Path *global_path;
+rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_global_odometry;
+rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pub_global_path;
+rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub_car;
+nav_msgs::msg::Path *global_path;
 double last_vio_t = -1;
-std::queue<sensor_msgs::NavSatFixConstPtr> gpsQueue;
+std::queue<sensor_msgs::msg::NavSatFix::SharedPtr> gpsQueue;
 std::mutex m_buf;
 
 void publish_car_model(double t, Eigen::Vector3d t_w_car, Eigen::Quaterniond q_w_car)
 {
-    visualization_msgs::MarkerArray markerArray_msg;
-    visualization_msgs::Marker car_mesh;
-    car_mesh.header.stamp = ros::Time(t);
+    visualization_msgs::msg::MarkerArray markerArray_msg;
+    visualization_msgs::msg::Marker car_mesh;
+    car_mesh.header.stamp = rclcpp::Time(t);
     car_mesh.header.frame_id = "world";
-    car_mesh.type = visualization_msgs::Marker::MESH_RESOURCE;
-    car_mesh.action = visualization_msgs::Marker::ADD;
+    car_mesh.type = visualization_msgs::msg::Marker::MESH_RESOURCE;
+    car_mesh.action = visualization_msgs::msg::Marker::ADD;
     car_mesh.id = 0;
 
     car_mesh.mesh_resource = "package://global_fusion/models/car.dae";
@@ -67,21 +70,14 @@ void publish_car_model(double t, Eigen::Vector3d t_w_car, Eigen::Quaterniond q_w
     car_mesh.scale.y = major_scale;
     car_mesh.scale.z = major_scale;
     markerArray_msg.markers.push_back(car_mesh);
-    pub_car.publish(markerArray_msg);
+    pub_car->publish(markerArray_msg);
 }
 
-void GPS_callback(const sensor_msgs::NavSatFixConstPtr &GPS_msg)
-{
-    //printf("gps_callback! \n");
-    m_buf.lock();
-    gpsQueue.push(GPS_msg);
-    m_buf.unlock();
-}
 
-void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
+void vio_callback(const nav_msgs::msg::Odometry::SharedPtr pose_msg)
 {
     //printf("vio_callback! \n");
-    double t = pose_msg->header.stamp.toSec();
+    double t = pose_msg->header.stamp.sec;
     last_vio_t = t;
     Eigen::Vector3d vio_t(pose_msg->pose.pose.position.x, pose_msg->pose.pose.position.y, pose_msg->pose.pose.position.z);
     Eigen::Quaterniond vio_q;
@@ -95,13 +91,13 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
     m_buf.lock();
     while(!gpsQueue.empty())
     {
-        sensor_msgs::NavSatFixConstPtr GPS_msg = gpsQueue.front();
-        double gps_t = GPS_msg->header.stamp.toSec();
+        sensor_msgs::msg::NavSatFix::ConstPtr GPS_msg = gpsQueue.front();
+        double gps_t = GPS_msg->header.stamp.sec;
         printf("vio t: %f, gps t: %f \n", t, gps_t);
         // 10ms sync tolerance
         if(gps_t >= t - 0.01 && gps_t <= t + 0.01)
         {
-            //printf("receive GPS with timestamp %f\n", GPS_msg->header.stamp.toSec());
+            //printf("receive GPS with timestamp %f\n", GPS_msg->header.stamp.sec);
             double latitude = GPS_msg->latitude;
             double longitude = GPS_msg->longitude;
             double altitude = GPS_msg->altitude;
@@ -126,7 +122,7 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
     Eigen:: Quaterniond global_q;
     globalEstimator.getGlobalOdom(global_t, global_q);
 
-    nav_msgs::Odometry odometry;
+    nav_msgs::msg::Odometry odometry;
     odometry.header = pose_msg->header;
     odometry.header.frame_id = "world";
     odometry.child_frame_id = "world";
@@ -137,8 +133,8 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
     odometry.pose.pose.orientation.y = global_q.y();
     odometry.pose.pose.orientation.z = global_q.z();
     odometry.pose.pose.orientation.w = global_q.w();
-    pub_global_odometry.publish(odometry);
-    pub_global_path.publish(*global_path);
+    pub_global_odometry->publish(odometry);
+    pub_global_path->publish(*global_path);
     publish_car_model(t, global_t, global_q);
 
 
@@ -146,7 +142,7 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
     std::ofstream foutC("/home/tony-ws1/output/vio_global.csv", ios::app);
     foutC.setf(ios::fixed, ios::floatfield);
     foutC.precision(0);
-    foutC << pose_msg->header.stamp.toSec() * 1e9 << ",";
+    foutC << pose_msg->header.stamp.sec * 1e9 << ",";
     foutC.precision(5);
     foutC << global_t.x() << ","
             << global_t.y() << ","
@@ -158,18 +154,39 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
     foutC.close();
 }
 
+
+void GPS_callback(const sensor_msgs::msg::NavSatFix::SharedPtr GPS_msg)
+{
+    m_buf.lock();
+    gpsQueue.push(GPS_msg);
+    m_buf.unlock();
+}
+
+
+
+
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "globalEstimator");
-    ros::NodeHandle n("~");
+    rclcpp::init(argc, argv);
+    auto n = rclcpp::Node::make_shared("globalEstimator");
+    auto qos_profile = rclcpp::QoS(rclcpp::KeepLast(100));
 
-    global_path = &globalEstimator.global_path;
 
-    ros::Subscriber sub_GPS = n.subscribe("/gps", 100, GPS_callback);
-    ros::Subscriber sub_vio = n.subscribe("/vins_estimator/odometry", 100, vio_callback);
-    pub_global_path = n.advertise<nav_msgs::Path>("global_path", 100);
-    pub_global_odometry = n.advertise<nav_msgs::Odometry>("global_odometry", 100);
-    pub_car = n.advertise<visualization_msgs::MarkerArray>("car_model", 1000);
-    ros::spin();
+    auto sub_GPS = n->create_subscription<sensor_msgs::msg::NavSatFix>("/gps", rclcpp::QoS(rclcpp::KeepLast(100)), GPS_callback);
+
+    auto sub_vio = n->create_subscription<nav_msgs::msg::Odometry>("/vins_estimator/odometry", rclcpp::QoS(rclcpp::KeepLast(100)), vio_callback);
+
+
+
+
+
+    pub_global_path = n->create_publisher<nav_msgs::msg::Path>("global_path", 100);
+    pub_global_odometry = n->create_publisher<nav_msgs::msg::Odometry>("global_odometry", 100);
+    pub_car = n->create_publisher<visualization_msgs::msg::MarkerArray>("car_model", 1000);
+
+
+    global_path = &(globalEstimator.global_path);
+    rclcpp::spin(n);
     return 0;
 }
+

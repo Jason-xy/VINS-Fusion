@@ -472,9 +472,10 @@ bool KeyFrame::findConnection(KeyFrame* old_kf)
 	            	*/
 	            	cv::Mat thumbimage;
 	            	cv::resize(loop_match_img, thumbimage, cv::Size(loop_match_img.cols / 2, loop_match_img.rows / 2));
-	    	    	sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", thumbimage).toImageMsg();
-	                msg->header.stamp = ros::Time(time_stamp);
-	    	    	pub_match_img.publish(msg);
+	    	    	// sensor_msgs::msg::ImagePtr
+					sensor_msgs::msg::Image::SharedPtr msg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", thumbimage).toImageMsg();
+	                msg->header.stamp = rclcpp::Time(time_stamp);
+	    	    	pub_match_img->publish(*msg);
 	            }
 	        }
 	    #endif

@@ -10,17 +10,19 @@
  *******************************************************/
 
 #include <vector>
-#include <ros/ros.h>
-#include <nav_msgs/Odometry.h>
-#include <nav_msgs/Path.h>
-#include <sensor_msgs/PointCloud.h>
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/image_encodings.h>
-#include <visualization_msgs/Marker.h>
-#include <std_msgs/Bool.h>
+#include <rclcpp/rclcpp.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+#include <nav_msgs/msg/path.hpp>
+#include <sensor_msgs/msg/point_cloud.hpp>
+#include <sensor_msgs/msg/image.hpp>
+// #include <sensor_msgs/image_encodings.h>
+#include "image_encodings.hpp"
+#include <visualization_msgs/msg/marker.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <iostream>
-#include <ros/package.h>
+// #include <ros/package.h>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 #include <mutex>
 #include <queue>
 #include <thread>
@@ -31,13 +33,15 @@
 #include "utility/tic_toc.h"
 #include "pose_graph.h"
 #include "utility/CameraPoseVisualization.h"
+// #include "camodocal/camera_models/CameraFactory.h"
 #include "parameters.h"
 #define SKIP_FIRST_CNT 10
 using namespace std;
 
-queue<sensor_msgs::ImageConstPtr> image_buf;
-queue<sensor_msgs::PointCloudConstPtr> point_buf;
-queue<nav_msgs::Odometry::ConstPtr> pose_buf;
+queue<sensor_msgs::msg::Image::ConstPtr> image_buf;
+queue<sensor_msgs::msg::PointCloud::ConstPtr> point_buf;
+// queue<sensor_msgs::msg::PointCloud2::ConstPtr> point_buf2;
+queue<nav_msgs::msg::Odometry::ConstPtr> pose_buf;
 queue<Eigen::Vector3d> odometry_buf;
 std::mutex m_buf;
 std::mutex m_process;
@@ -60,9 +64,9 @@ int DEBUG_IMAGE;
 camodocal::CameraPtr m_camera;
 Eigen::Vector3d tic;
 Eigen::Matrix3d qic;
-ros::Publisher pub_match_img;
-ros::Publisher pub_camera_pose_visual;
-ros::Publisher pub_odometry_rect;
+rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr pub_match_img;
+rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub_camera_pose_visual;
+rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odometry_rect;
 
 std::string BRIEF_PATTERN_FILE;
 std::string POSE_GRAPH_SAVE_PATH;
@@ -71,7 +75,7 @@ CameraPoseVisualization cameraposevisual(1, 0, 0, 1);
 Eigen::Vector3d last_t(-100, -100, -100);
 double last_image_time = -1;
 
-ros::Publisher pub_point_cloud, pub_margin_cloud;
+rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr pub_point_cloud, pub_margin_cloud;
 
 void new_sequence()
 {
@@ -81,7 +85,7 @@ void new_sequence()
     if (sequence > 5)
     {
         ROS_WARN("only support 5 sequences since it's boring to copy code for more sequences.");
-        ROS_BREAK();
+        // ROS_BREAK();
     }
     posegraph.posegraph_visualization->reset();
     posegraph.publish();
@@ -97,26 +101,27 @@ void new_sequence()
     m_buf.unlock();
 }
 
-void image_callback(const sensor_msgs::ImageConstPtr &image_msg)
+void image_callback(const sensor_msgs::msg::Image::SharedPtr image_msg)
 {
     //ROS_INFO("image_callback!");
     m_buf.lock();
     image_buf.push(image_msg);
     m_buf.unlock();
-    //printf(" image time %f \n", image_msg->header.stamp.toSec());
+    //printf(" image time %f \n", image_msg->header.stamp.sec);
 
     // detect unstable camera stream
     if (last_image_time == -1)
-        last_image_time = image_msg->header.stamp.toSec();
-    else if (image_msg->header.stamp.toSec() - last_image_time > 1.0 || image_msg->header.stamp.toSec() < last_image_time)
+        last_image_time = image_msg->header.stamp.sec + image_msg->header.stamp.nanosec * (1e-9);
+    else if (image_msg->header.stamp.sec + image_msg->header.stamp.nanosec * (1e-9) - last_image_time > 1.0 
+                    || image_msg->header.stamp.sec + image_msg->header.stamp.nanosec * (1e-9) < last_image_time)
     {
         ROS_WARN("image discontinue! detect a new sequence!");
         new_sequence();
     }
-    last_image_time = image_msg->header.stamp.toSec();
+    last_image_time = image_msg->header.stamp.sec + image_msg->header.stamp.nanosec * (1e-9);
 }
 
-void point_callback(const sensor_msgs::PointCloudConstPtr &point_msg)
+void point_callback(const sensor_msgs::msg::PointCloud::SharedPtr point_msg)
 {
     //ROS_INFO("point_callback!");
     m_buf.lock();
@@ -133,7 +138,7 @@ void point_callback(const sensor_msgs::PointCloudConstPtr &point_msg)
     }
     */
     // for visualization
-    sensor_msgs::PointCloud point_cloud;
+    sensor_msgs::msg::PointCloud point_cloud;
     point_cloud.header = point_msg->header;
     for (unsigned int i = 0; i < point_msg->points.size(); i++)
     {
@@ -142,19 +147,19 @@ void point_callback(const sensor_msgs::PointCloudConstPtr &point_msg)
         p_3d.y = point_msg->points[i].y;
         p_3d.z = point_msg->points[i].z;
         Eigen::Vector3d tmp = posegraph.r_drift * Eigen::Vector3d(p_3d.x, p_3d.y, p_3d.z) + posegraph.t_drift;
-        geometry_msgs::Point32 p;
+        geometry_msgs::msg::Point32 p;
         p.x = tmp(0);
         p.y = tmp(1);
         p.z = tmp(2);
         point_cloud.points.push_back(p);
     }
-    pub_point_cloud.publish(point_cloud);
+    pub_point_cloud->publish(point_cloud);
 }
 
 // only for visualization
-void margin_point_callback(const sensor_msgs::PointCloudConstPtr &point_msg)
+void margin_point_callback(const sensor_msgs::msg::PointCloud::SharedPtr point_msg)
 {
-    sensor_msgs::PointCloud point_cloud;
+    sensor_msgs::msg::PointCloud point_cloud;
     point_cloud.header = point_msg->header;
     for (unsigned int i = 0; i < point_msg->points.size(); i++)
     {
@@ -163,16 +168,16 @@ void margin_point_callback(const sensor_msgs::PointCloudConstPtr &point_msg)
         p_3d.y = point_msg->points[i].y;
         p_3d.z = point_msg->points[i].z;
         Eigen::Vector3d tmp = posegraph.r_drift * Eigen::Vector3d(p_3d.x, p_3d.y, p_3d.z) + posegraph.t_drift;
-        geometry_msgs::Point32 p;
+        geometry_msgs::msg::Point32 p;
         p.x = tmp(0);
         p.y = tmp(1);
         p.z = tmp(2);
         point_cloud.points.push_back(p);
     }
-    pub_margin_cloud.publish(point_cloud);
+    pub_margin_cloud->publish(point_cloud);
 }
 
-void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
+void pose_callback(const nav_msgs::msg::Odometry::SharedPtr pose_msg)
 {
     //ROS_INFO("pose_callback!");
     m_buf.lock();
@@ -189,7 +194,7 @@ void pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
     */
 }
 
-void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
+void vio_callback(const nav_msgs::msg::Odometry::SharedPtr pose_msg)
 {
     //ROS_INFO("vio_callback!");
     Vector3d vio_t(pose_msg->pose.pose.position.x, pose_msg->pose.pose.position.y, pose_msg->pose.pose.position.z);
@@ -205,7 +210,7 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
     vio_t = posegraph.r_drift * vio_t + posegraph.t_drift;
     vio_q = posegraph.r_drift * vio_q;
 
-    nav_msgs::Odometry odometry;
+    nav_msgs::msg::Odometry odometry;
     odometry.header = pose_msg->header;
     odometry.header.frame_id = "world";
     odometry.pose.pose.position.x = vio_t.x();
@@ -215,7 +220,7 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
     odometry.pose.pose.orientation.y = vio_q.y();
     odometry.pose.pose.orientation.z = vio_q.z();
     odometry.pose.pose.orientation.w = vio_q.w();
-    pub_odometry_rect.publish(odometry);
+    pub_odometry_rect->publish(odometry);
 
     Vector3d vio_t_cam;
     Quaterniond vio_q_cam;
@@ -229,7 +234,7 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
 
 }
 
-void extrinsic_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
+void extrinsic_callback(const nav_msgs::msg::Odometry::SharedPtr pose_msg)
 {
     m_process.lock();
     tic = Vector3d(pose_msg->pose.pose.position.x,
@@ -246,37 +251,43 @@ void process()
 {
     while (true)
     {
-        sensor_msgs::ImageConstPtr image_msg = NULL;
-        sensor_msgs::PointCloudConstPtr point_msg = NULL;
-        nav_msgs::Odometry::ConstPtr pose_msg = NULL;
+        sensor_msgs::msg::Image::ConstPtr image_msg = NULL;
+        sensor_msgs::msg::PointCloud::ConstPtr point_msg = NULL;
+        nav_msgs::msg::Odometry::ConstPtr pose_msg = NULL;
 
         // find out the messages with same time stamp
         m_buf.lock();
         if(!image_buf.empty() && !point_buf.empty() && !pose_buf.empty())
         {
-            if (image_buf.front()->header.stamp.toSec() > pose_buf.front()->header.stamp.toSec())
+            if (image_buf.front()->header.stamp.sec + image_buf.front()->header.stamp.nanosec * (1e-9) 
+                    > pose_buf.front()->header.stamp.sec + pose_buf.front()->header.stamp.nanosec * (1e-9))
             {
                 pose_buf.pop();
                 printf("throw pose at beginning\n");
             }
-            else if (image_buf.front()->header.stamp.toSec() > point_buf.front()->header.stamp.toSec())
+            else if (image_buf.front()->header.stamp.sec + image_buf.front()->header.stamp.nanosec * (1e-9) 
+                    > point_buf.front()->header.stamp.sec + point_buf.front()->header.stamp.nanosec * (1e-9))
             {
                 point_buf.pop();
                 printf("throw point at beginning\n");
             }
-            else if (image_buf.back()->header.stamp.toSec() >= pose_buf.front()->header.stamp.toSec() 
-                && point_buf.back()->header.stamp.toSec() >= pose_buf.front()->header.stamp.toSec())
+            else if (image_buf.back()->header.stamp.sec + image_buf.back()->header.stamp.nanosec * (1e-9) 
+                        >= pose_buf.front()->header.stamp.sec + pose_buf.front()->header.stamp.nanosec * (1e-9)
+                && point_buf.back()->header.stamp.sec + point_buf.back()->header.stamp.nanosec * (1e-9) 
+                        >= pose_buf.front()->header.stamp.sec + pose_buf.front()->header.stamp.nanosec * (1e-9))
             {
                 pose_msg = pose_buf.front();
                 pose_buf.pop();
                 while (!pose_buf.empty())
                     pose_buf.pop();
-                while (image_buf.front()->header.stamp.toSec() < pose_msg->header.stamp.toSec())
+                while (image_buf.front()->header.stamp.sec + image_buf.front()->header.stamp.nanosec * (1e-9) 
+                        < pose_msg->header.stamp.sec + pose_msg->header.stamp.nanosec * (1e-9))
                     image_buf.pop();
                 image_msg = image_buf.front();
                 image_buf.pop();
 
-                while (point_buf.front()->header.stamp.toSec() < pose_msg->header.stamp.toSec())
+                while (point_buf.front()->header.stamp.sec + point_buf.front()->header.stamp.nanosec * (1e-9) 
+                        < pose_msg->header.stamp.sec + pose_msg->header.stamp.nanosec * (1e-9))
                     point_buf.pop();
                 point_msg = point_buf.front();
                 point_buf.pop();
@@ -286,9 +297,9 @@ void process()
 
         if (pose_msg != NULL)
         {
-            //printf(" pose time %f \n", pose_msg->header.stamp.toSec());
-            //printf(" point time %f \n", point_msg->header.stamp.toSec());
-            //printf(" image time %f \n", image_msg->header.stamp.toSec());
+            //printf(" pose time %f \n", pose_msg->header.stamp.sec);
+            //printf(" point time %f \n", point_msg->header.stamp.sec);
+            //printf(" image time %f \n", image_msg->header.stamp.sec);
             // skip fisrt few
             if (skip_first_cnt < SKIP_FIRST_CNT)
             {
@@ -309,7 +320,7 @@ void process()
             cv_bridge::CvImageConstPtr ptr;
             if (image_msg->encoding == "8UC1")
             {
-                sensor_msgs::Image img;
+                sensor_msgs::msg::Image img;
                 img.header = image_msg->header;
                 img.height = image_msg->height;
                 img.width = image_msg->width;
@@ -360,7 +371,7 @@ void process()
                     //printf("u %f, v %f \n", p_2d_uv.x, p_2d_uv.y);
                 }
 
-                KeyFrame* keyframe = new KeyFrame(pose_msg->header.stamp.toSec(), frame_index, T, R, image,
+                KeyFrame* keyframe = new KeyFrame(pose_msg->header.stamp.sec + pose_msg->header.stamp.nanosec * (1e-9), frame_index, T, R, image,
                                    point_3d, point_2d_uv, point_2d_normal, point_id, sequence);   
                 m_process.lock();
                 start_flag = 1;
@@ -387,7 +398,7 @@ void command()
             m_process.unlock();
             printf("save pose graph finish\nyou can set 'load_previous_pose_graph' to 1 in the config file to reuse it next time\n");
             printf("program shutting down...\n");
-            ros::shutdown();
+            rclcpp::shutdown();
         }
         if (c == 'n')
             new_sequence();
@@ -399,8 +410,8 @@ void command()
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "loop_fusion");
-    ros::NodeHandle n("~");
+    rclcpp::init(argc, argv);
+    auto n = rclcpp::Node::make_shared("loop_fusion");
     posegraph.registerPub(n);
     
     VISUALIZATION_SHIFT_X = 0;
@@ -433,7 +444,9 @@ int main(int argc, char **argv)
 
     ROW = fsSettings["image_height"];
     COL = fsSettings["image_width"];
-    std::string pkg_path = ros::package::getPath("loop_fusion");
+
+    // referred from: https://answers.ros.org/question/288501/ros2-equivalent-of-rospackagegetpath/
+    std::string pkg_path = ament_index_cpp::get_package_share_directory("loop_fusion");
     string vocabulary_file = pkg_path + "/../support_files/brief_k10L6.bin";
     cout << "vocabulary_file" << vocabulary_file << endl;
     posegraph.loadVocabulary(vocabulary_file);
@@ -478,18 +491,19 @@ int main(int argc, char **argv)
         load_flag = 1;
     }
 
-    ros::Subscriber sub_vio = n.subscribe("/vins_estimator/odometry", 2000, vio_callback);
-    ros::Subscriber sub_image = n.subscribe(IMAGE_TOPIC, 2000, image_callback);
-    ros::Subscriber sub_pose = n.subscribe("/vins_estimator/keyframe_pose", 2000, pose_callback);
-    ros::Subscriber sub_extrinsic = n.subscribe("/vins_estimator/extrinsic", 2000, extrinsic_callback);
-    ros::Subscriber sub_point = n.subscribe("/vins_estimator/keyframe_point", 2000, point_callback);
-    ros::Subscriber sub_margin_point = n.subscribe("/vins_estimator/margin_cloud", 2000, margin_point_callback);
+    auto sub_vio          = n->create_subscription<nav_msgs::msg::Odometry>("/vins_estimator/odometry", rclcpp::QoS(rclcpp::KeepLast(2000)), vio_callback);
+    auto sub_image        = n->create_subscription<sensor_msgs::msg::Image>(IMAGE_TOPIC, rclcpp::QoS(rclcpp::KeepLast(2000)), image_callback);
+    auto sub_pose         = n->create_subscription<nav_msgs::msg::Odometry>("/vins_estimator/keyframe_pose", rclcpp::QoS(rclcpp::KeepLast(2000)), pose_callback);
+    auto sub_extrinsic    = n->create_subscription<nav_msgs::msg::Odometry>("/vins_estimator/extrinsic", rclcpp::QoS(rclcpp::KeepLast(2000)), extrinsic_callback);
+    auto sub_point        = n->create_subscription<sensor_msgs::msg::PointCloud>("/vins_estimator/keyframe_point", rclcpp::QoS(rclcpp::KeepLast(2000)), point_callback);
+    auto sub_margin_point = n->create_subscription<sensor_msgs::msg::PointCloud>("/vins_estimator/margin_cloud", rclcpp::QoS(rclcpp::KeepLast(2000)), margin_point_callback);
 
-    pub_match_img = n.advertise<sensor_msgs::Image>("match_image", 1000);
-    pub_camera_pose_visual = n.advertise<visualization_msgs::MarkerArray>("camera_pose_visual", 1000);
-    pub_point_cloud = n.advertise<sensor_msgs::PointCloud>("point_cloud_loop_rect", 1000);
-    pub_margin_cloud = n.advertise<sensor_msgs::PointCloud>("margin_cloud_loop_rect", 1000);
-    pub_odometry_rect = n.advertise<nav_msgs::Odometry>("odometry_rect", 1000);
+
+    pub_match_img          = n->create_publisher<sensor_msgs::msg::Image>("match_image", 1000);
+    pub_camera_pose_visual = n->create_publisher<visualization_msgs::msg::MarkerArray>("camera_pose_visual", 1000);
+    pub_point_cloud        = n->create_publisher<sensor_msgs::msg::PointCloud>("point_cloud_loop_rect", 1000);
+    pub_margin_cloud       = n->create_publisher<sensor_msgs::msg::PointCloud>("margin_cloud_loop_rect", 1000);
+    pub_odometry_rect      = n->create_publisher<nav_msgs::msg::Odometry>("odometry_rect", 1000);
 
     std::thread measurement_process;
     std::thread keyboard_command_process;
@@ -497,7 +511,7 @@ int main(int argc, char **argv)
     measurement_process = std::thread(process);
     keyboard_command_process = std::thread(command);
     
-    ros::spin();
+    rclcpp::spin(n);
 
     return 0;
 }

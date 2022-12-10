@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <vector>
 #include <eigen3/Eigen/Dense>
 #include "../utility/utility.h"
@@ -19,6 +19,10 @@
 #include <map>
 
 using namespace std;
+
+#define ROS_INFO RCUTILS_LOG_INFO
+#define ROS_WARN RCUTILS_LOG_WARN
+#define ROS_ERROR RCUTILS_LOG_ERROR
 
 const double FOCAL_LENGTH = 460.0;
 const int WINDOW_SIZE = 10;

@@ -8,7 +8,7 @@
  *******************************************************/
 
 #pragma once
-#include <ros/assert.h>
+#include <rcpputils/asserts.hpp>
 #include <iostream>
 #include <eigen3/Eigen/Dense>
 
@@ -17,6 +17,11 @@
 #include "integration_base.h"
 
 #include <ceres/ceres.h>
+
+#define ROS_INFO RCUTILS_LOG_INFO
+#define ROS_WARN RCUTILS_LOG_WARN
+#define ROS_ERROR RCUTILS_LOG_ERROR
+
 
 class IMUFactor : public ceres::SizedCostFunction<15, 7, 9, 7, 9>
 {

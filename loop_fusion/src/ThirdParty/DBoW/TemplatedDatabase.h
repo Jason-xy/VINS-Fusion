@@ -381,6 +381,7 @@ template<class TDescriptor, class F>
 TemplatedDatabase<TDescriptor, F>::~TemplatedDatabase(void)
 {
   delete m_voc;
+  m_voc = nullptr;
 }
 
 // --------------------------------------------------------------------------
@@ -510,6 +511,7 @@ inline void TemplatedDatabase<TDescriptor, F>::setVocabulary
   (const T& voc)
 {
   delete m_voc;
+  m_voc = nullptr;
   m_voc = new T(voc);
   clear();
 }
@@ -524,6 +526,7 @@ inline void TemplatedDatabase<TDescriptor, F>::setVocabulary
   m_use_di = use_di;
   m_dilevels = di_levels;
   delete m_voc;
+  m_voc = nullptr;
   m_voc = new T(voc);
   clear();
 }

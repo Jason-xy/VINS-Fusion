@@ -413,7 +413,7 @@ void FeatureManager::triangulate(int frameCnt, Vector3d Ps[], Matrix3d Rs[], Vec
             if (imu_i == imu_j)
                 continue;
         }
-        ROS_ASSERT(svd_idx == svd_A.rows());
+        assert(svd_idx == svd_A.rows());
         Eigen::Vector4d svd_V = Eigen::JacobiSVD<Eigen::MatrixXd>(svd_A, Eigen::ComputeThinV).matrixV().rightCols<1>();
         double svd_method = svd_V[2] / svd_V[3];
         //it_per_id->estimated_depth = -b / A;

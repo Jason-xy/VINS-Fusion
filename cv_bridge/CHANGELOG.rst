@@ -2,53 +2,142 @@
 Changelog for package cv_bridge
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1.16.2 (2022-10-03)
--------------------
+3.0.7 (2022-10-15)
+------------------
+* Add message to print out Boost_VERSION_STRING, and apply with CMP0093
+* Address RHEL buildfailure with Boost 1.66.0
+* Contributors: Kenji Brameld
 
-1.16.1 (2022-09-06)
--------------------
-* Fix 16U encoding type (`#445 <https://github.com/ros-perception/vision_opencv/issues/445>`_)
-* Add header arg to cv2_to_imgmsg (`#326 <https://github.com/ros-perception/vision_opencv/issues/326>`_)
-* Contributors: Ibrahim Essam, Kenji Brameld, Naoya Yamaguchi
+3.0.6 (2022-09-21)
+------------------
+* Fix windows build when Boost 1.67 or newer (`#488 <https://github.com/ros-perception/vision_opencv/issues/488>`_)
+* Contributors: Kenji Brameld
 
-1.16.0 (2021-11-23)
--------------------
-* prevent conversion of single channel 16bit integer images to/from colour (`#412 <https://github.com/ros-perception/vision_opencv/issues/412>`_)
-* decode images in mode IMREAD_UNCHANGED (`#228 <https://github.com/ros-perception/vision_opencv/issues/228>`_)
-* Optimize includes (`#354 <https://github.com/ros-perception/vision_opencv/issues/354>`_)
-  As suggested by include-what-you-use
-* Fix Python linking on OSX (`#331 <https://github.com/ros-perception/vision_opencv/issues/331>`_)
-* Fix typo (`#333 <https://github.com/ros-perception/vision_opencv/issues/333>`_)
-* Contributors: Christian Rauch, Markus Vieth, Matthijs van der Burgh, Tobias Fischer
+3.0.5 (2022-09-17)
+------------------
+* Revert API breakages
+* Contributors: Kenji Brameld
 
-1.15.0 (2020-05-19)
--------------------
-* [Noetic] Use opencv3 on buster (`#330 <https://github.com/ros-perception/vision_opencv/issues/330>`_)
-* more portable fixes. (`#328 <https://github.com/ros-perception/vision_opencv/issues/328>`_)
-* Contributors: Sean Yen, Shane Loretz
+3.0.4 (2022-09-14)
+------------------
+* Add apache license and bsd license, because both are used. (`#481 <https://github.com/ros-perception/vision_opencv/issues/481>`_)
+* Fix 16U encoding type (`#461 <https://github.com/ros-perception/vision_opencv/issues/461>`_)
+* Reorganize author tag (`#467 <https://github.com/ros-perception/vision_opencv/issues/467>`_)
+* Update maintainers (`#451 <https://github.com/ros-perception/vision_opencv/issues/451>`_)
+* Fix ModuleNotFoundError: No module named 'cv_bridge' error (`#444 <https://github.com/ros-perception/vision_opencv/issues/444>`_)
+* Make python3-opencv from test_depend to depend tag in package.xml (`#439 <https://github.com/ros-perception/vision_opencv/issues/439>`_)
+* Contributors: Daisuke Nishimatsu, Kenji Brameld, RachelRen05
 
-1.14.0 (2020-04-06)
--------------------
-* Noetic release (`#323 <https://github.com/ros-perception/vision_opencv/issues/323>`_)
-* update CMakeLists.txt for Windows build environment (`#265 <https://github.com/ros-perception/vision_opencv/issues/265>`_)
-* remove path splash separator from 'package_dir' (`#267 <https://github.com/ros-perception/vision_opencv/issues/267>`_)
-* fix travis. (`#269 <https://github.com/ros-perception/vision_opencv/issues/269>`_)
-* Contributors: Alejandro Hernández Cordero, James Xu, Sean Yen
+3.0.3 (2022-04-01)
+------------------
+* Add missing dependency on rcpputils (`#427 <https://github.com/ros-perception/vision_opencv/issues/427>`_)
+* Contributors: Shane Loretz
 
-1.13.0 (2018-04-30)
--------------------
-* Use rosdep OpenCV and not ROS one.
-  We defintely don't need the whole OpenCV.
-  We need to clean the rosdep keys.
-* Contributors: Vincent Rabaud
+3.0.2 (2022-01-27)
+------------------
+* Minor cleanups to the ROS 2 branch (`#418 <https://github.com/ros-perception/vision_opencv/issues/418>`_)
+* Find Python3 if not on Android (`#423 <https://github.com/ros-perception/vision_opencv/issues/423>`_)
+* Forward ports from noetic (`#420 <https://github.com/ros-perception/vision_opencv/issues/420>`_)
+  * Add header arg to cv2_to_imgmsg (`#326 <https://github.com/ros-perception/vision_opencv/issues/326>`_)
+  * prevent conversion of single channel 16bit integer images to/from colour (`#412 <https://github.com/ros-perception/vision_opencv/issues/412>`_)
+* Contributors: Chris Lalancette, Christian Rauch, Michael Carroll, Naoya Yamaguchi, Shane Loretz
 
-1.12.8 (2018-04-17)
+3.0.1 (2022-01-25)
+------------------
+* Use Boost::python3 if Boost < 1.67 (`#422 <https://github.com/ros-perception/vision_opencv/issues/422>`_)
+* Use Boost::pythonXY target (`#421 <https://github.com/ros-perception/vision_opencv/issues/421>`_)
+* Contributors: Shane Loretz
+
+3.0.0 (2022-01-19)
+------------------
+* Export Modern CMake targets and install includes to another folder(`#419 <https://github.com/ros-perception/vision_opencv/issues/419>`_)
+* Handle padded img msg in Python (`#400 <https://github.com/ros-perception/vision_opencv/issues/400>`_)
+* Remove boost endian (`#399 <https://github.com/ros-perception/vision_opencv/issues/399>`_)
+* Add conversions from YUV422 YUY2 (`#396 <https://github.com/ros-perception/vision_opencv/issues/396>`_)
+* fix endianness comparison (`#397 <https://github.com/ros-perception/vision_opencv/issues/397>`_)
+* Export sensor_msgs dependency (`#392 <https://github.com/ros-perception/vision_opencv/issues/392>`_)
+* Fix multiple undefined references (`#370 <https://github.com/ros-perception/vision_opencv/issues/370>`_)
+* Updated `cv_bridge.dll` install location. (`#356 <https://github.com/ros-perception/vision_opencv/issues/356>`_)
+* Contributors: Homalozoa X, Jacob Perron, Patrick Musau, Sean Yen, Shane Loretz
+
+2.2.1 (2020-07-16)
+------------------
+* Align module.hpp with noetic (`#342 <https://github.com/ros-perception/vision_opencv/issues/342>`_)
+* Contributors: Michael Carroll
+
+2.2.0 (2020-05-27)
+------------------
+* Disable portable image tests (`#337 <https://github.com/ros-perception/vision_opencv/issues/337>`_)
+* use more specific boost rosdep keys (`#319 <https://github.com/ros-perception/vision_opencv/issues/319>`_)
+* add opencv4 into the dependency list for ROS2 (`#324 <https://github.com/ros-perception/vision_opencv/issues/324>`_)
+* Corrected the typo of Boost_INCLUDE_DIRS (`#315 <https://github.com/ros-perception/vision_opencv/issues/315>`_)
+* use target include directories (`#313 <https://github.com/ros-perception/vision_opencv/issues/313>`_)
+* Contributors: Karsten Knese, Lewis Liu, Michael Carroll, Mikael Arguedas, Sean Yen
+
+2.1.3 (2019-10-23)
+------------------
+* populate array.array directly instead of converting to and from a string (`#305 <https://github.com/ros-perception/vision_opencv/issues/305>`_)
+* include Boost to fix Windows build (`#290 <https://github.com/ros-perception/vision_opencv/issues/290>`_)
+* Export interfaces for Win32 Shared Lib (`#301 <https://github.com/ros-perception/vision_opencv/issues/301>`_)
+* Contributors: Dirk Thomas, Jonathan Noyola, Sean Yen
+
+2.1.2 (2019-05-30)
+------------------
+* Suppress Boost Python warning. (`#279 <https://github.com/ros-perception/vision_opencv/issues/279>`_)
+* silence unused return value warnings (`#276 <https://github.com/ros-perception/vision_opencv/issues/276>`_)
+* Contributors: Karsten Knese, Michael Carroll
+
+2.1.1 (2019-04-26)
+------------------
+* Replace ament commands with colcon (`#263 <https://github.com/ros-perception/vision_opencv/issues/263>`_)
+  Latest ros2 repo does not include ament_tools. Executing ament command results in error.
+* Contributors: Lalit Begani
+
+2.1.0 (2018-11-26)
+------------------
+* find boost_python on boost 1.58 (<1.65) (`#246 <https://github.com/ros-perception/vision_opencv/issues/246>`_)
+* Contributors: Mikael Arguedas
+
+2.0.5 (2018-08-17)
+------------------
+* remove redundant ament_auto_lint dependency to release package
+* fix test_encode_decode_cv2_compressed runtime error with JPEG2000
+* change python3-numpy as build and execution dependency to fix building
+  error while releasing package
+* Contributor: Ethan Gao
+
+2.0.4 (2018-08-14)
+------------------
+* Add libopencv-dev as dependency of cv_bridge
+* Replace assert_equal with assert to remove dependency to nose package
+* Contributor: Ethan Gao
+
+2.0.3 (2018-08-07)
+------------------
+* fix the build warning with colcon building
+* optimize buffer type of imgmsg_to_cv2()
+* add python3_opencv and python3_numpy as dependency
+* uncrustify 0.67 coding style alignment
+* Contributors: Mikael Arguedas, Lars Berscheid, Ethan Gao
+
+2.0.2 (2018-06-29)
+------------------
+* fix rosdep keys issue of opencv3
+
+
+2.0.1 (2018-06-28)
+------------------
+
+2.0.0 (2018-06-06)
 -------------------
-* Merge pull request `#191 <https://github.com/ros-perception/vision_opencv/issues/191>`_ from patrickelectric/kinetic
-  cv2_to_imgmsg: step must be int
-* cv2_to_imgmsg: step must be int
-  Signed-off-by: Patrick José Pereira <patrickelectric@gmail.com>
-* Contributors: Patrick José Pereira, Vincent Rabaud
+* Port cv_bridge to ros2
+* Remove the old inherent boost files
+* Replace boost code with newer C++ standard higher than C++11
+* Add a new readme
+* Adapt message definition like sensor_msg/Image etc in ROS2
+* Coding style alignment with ROS2 using cppcheck/cpplint and python flake8/pep257
+* Enable all the C++/Python unit test with gtest and unittest with ament tools
+* Contributors: Ethan Gao
 
 1.12.7 (2017-11-12)
 -------------------

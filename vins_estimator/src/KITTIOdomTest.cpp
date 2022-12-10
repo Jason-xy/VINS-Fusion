@@ -14,8 +14,8 @@
 #include <opencv2/opencv.hpp>
 #include <cmath>
 #include <string>
-#include <ros/ros.h>
-#include <sensor_msgs/Image.h>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/image.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include "estimator/estimator.h"
 #include "utility/visualization.h"
@@ -30,12 +30,12 @@ Eigen::Vector3d c1Tc0, c0Tc1;
 
 int main(int argc, char** argv)
 {
-	ros::init(argc, argv, "vins_estimator");
-	ros::NodeHandle n("~");
-	ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Info);
+	rclcpp::init(argc, argv);
+	auto n = rclcpp::Node::make_shared("vins_estimator");
+	// ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Info);
 
-	ros::Publisher pubLeftImage = n.advertise<sensor_msgs::Image>("/leftImage",1000);
-	ros::Publisher pubRightImage = n.advertise<sensor_msgs::Image>("/rightImage",1000);
+	rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr pubLeftImage  = n->create_publisher<sensor_msgs::msg::Image>("/leftImage",1000);
+	rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr pubRightImage = n->create_publisher<sensor_msgs::msg::Image>("/rightImage",1000);
 
 	if(argc != 3)
 	{
@@ -61,7 +61,7 @@ int main(int argc, char** argv)
 	file = std::fopen((dataPath + "times.txt").c_str() , "r");
 	if(file == NULL){
 	    printf("cannot find file: %stimes.txt\n", dataPath.c_str());
-	    ROS_BREAK();
+	    // ROS_BREAK();
 	    return 0;          
 	}
 	double imageTime;
@@ -81,7 +81,7 @@ int main(int argc, char** argv)
 
 	for (size_t i = 0; i < imageTimeList.size(); i++)
 	{	
-		if(ros::ok())
+		if(rclcpp::ok())
 		{
 			printf("\nprocess image %d\n", (int)i);
 			stringstream ss;
@@ -93,14 +93,16 @@ int main(int argc, char** argv)
 			//printf("%s\n", rightImagePath.c_str() );
 
 			imLeft = cv::imread(leftImagePath, cv::IMREAD_GRAYSCALE );
-			sensor_msgs::ImagePtr imLeftMsg = cv_bridge::CvImage(std_msgs::Header(), "mono8", imLeft).toImageMsg();
-			imLeftMsg->header.stamp = ros::Time(imageTimeList[i]);
-			pubLeftImage.publish(imLeftMsg);
+			// sensor_msgs::msg::ImagePtr 
+			auto imLeftMsg = cv_bridge::CvImage(std_msgs::msg::Header(), "mono8", imLeft).toImageMsg();
+			imLeftMsg->header.stamp = rclcpp::Time(imageTimeList[i]);
+			pubLeftImage->publish(*imLeftMsg);
 
 			imRight = cv::imread(rightImagePath, cv::IMREAD_GRAYSCALE );
-			sensor_msgs::ImagePtr imRightMsg = cv_bridge::CvImage(std_msgs::Header(), "mono8", imRight).toImageMsg();
-			imRightMsg->header.stamp = ros::Time(imageTimeList[i]);
-			pubRightImage.publish(imRightMsg);
+			// sensor_msgs::msg::ImagePtr 
+			auto imRightMsg = cv_bridge::CvImage(std_msgs::msg::Header(), "mono8", imRight).toImageMsg();
+			imRightMsg->header.stamp = rclcpp::Time(imageTimeList[i]);
+			pubRightImage->publish(*imRightMsg);
 
 
 			estimator.inputImage(imageTimeList[i], imLeft, imRight);

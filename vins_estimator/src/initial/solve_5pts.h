@@ -19,7 +19,13 @@ using namespace std;
 #include <eigen3/Eigen/Dense>
 using namespace Eigen;
 
-#include <ros/console.h>
+// #include <ros/console.h>
+
+
+#define ROS_INFO RCUTILS_LOG_INFO
+#define ROS_WARN RCUTILS_LOG_WARN
+#define ROS_DEBUG RCUTILS_LOG_DEBUG
+#define ROS_ERROR RCUTILS_LOG_ERROR
 
 class MotionEstimator
 {

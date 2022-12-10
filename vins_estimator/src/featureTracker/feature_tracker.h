@@ -29,6 +29,12 @@ using namespace std;
 using namespace camodocal;
 using namespace Eigen;
 
+
+#define ROS_INFO RCUTILS_LOG_INFO
+#define ROS_WARN RCUTILS_LOG_WARN
+#define ROS_DEBUG RCUTILS_LOG_DEBUG
+#define ROS_ERROR RCUTILS_LOG_ERROR
+
 bool inBorder(const cv::Point2f &pt);
 void reduceVector(vector<cv::Point2f> &v, vector<uchar> status);
 void reduceVector(vector<int> &v, vector<uchar> status);

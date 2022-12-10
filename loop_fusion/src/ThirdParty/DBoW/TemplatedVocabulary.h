@@ -459,7 +459,7 @@ template<class TDescriptor, class F>
 void TemplatedVocabulary<TDescriptor,F>::createScoringObject()
 {
   delete m_scoring_object;
-  m_scoring_object = NULL;
+  m_scoring_object = nullptr;
   
   switch(m_scoring)
   {
@@ -524,6 +524,7 @@ template<class TDescriptor, class F>
 TemplatedVocabulary<TDescriptor,F>::~TemplatedVocabulary()
 {
   delete m_scoring_object;
+  m_scoring_object = nullptr;
 }
 
 // --------------------------------------------------------------------------

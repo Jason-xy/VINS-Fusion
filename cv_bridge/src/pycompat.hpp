@@ -12,6 +12,7 @@
 //
 // Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
 // Copyright (C) 2009-2011, Willow Garage Inc., all rights reserved.
+// Copyright (c) 2018 Intel Corporation.
 // Third party copyrights are property of their respective owners.
 //
 // Redistribution and use in source and binary forms, with or without modification,
@@ -41,8 +42,8 @@
 //M*/
 
 // Defines for Python 2/3 compatibility.
-#ifndef __PYCOMPAT_HPP__
-#define __PYCOMPAT_HPP__
+#ifndef PYCOMPAT_HPP_
+#define PYCOMPAT_HPP_
 
 #if PY_MAJOR_VERSION >= 3
 // Python3 treats all ints as longs, PyInt_X functions have been removed.
@@ -67,4 +68,4 @@
 #endif
 #endif
 
-#endif // END HEADER GUARD
+#endif  // PYCOMPAT_HPP_
