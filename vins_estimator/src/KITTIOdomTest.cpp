@@ -95,13 +95,13 @@ int main(int argc, char** argv)
 			imLeft = cv::imread(leftImagePath, cv::IMREAD_GRAYSCALE );
 			// sensor_msgs::msg::ImagePtr 
 			auto imLeftMsg = cv_bridge::CvImage(std_msgs::msg::Header(), "mono8", imLeft).toImageMsg();
-			imLeftMsg->header.stamp = rclcpp::Time(imageTimeList[i]);
+			imLeftMsg->header.stamp = rclcpp::Time(static_cast<int64_t>(imageTimeList[i]*1e9));
 			pubLeftImage->publish(*imLeftMsg);
 
 			imRight = cv::imread(rightImagePath, cv::IMREAD_GRAYSCALE );
 			// sensor_msgs::msg::ImagePtr 
 			auto imRightMsg = cv_bridge::CvImage(std_msgs::msg::Header(), "mono8", imRight).toImageMsg();
-			imRightMsg->header.stamp = rclcpp::Time(imageTimeList[i]);
+			imRightMsg->header.stamp = rclcpp::Time(static_cast<int64_t>(imageTimeList[i]*1e9));
 			pubRightImage->publish(*imRightMsg);
 
 

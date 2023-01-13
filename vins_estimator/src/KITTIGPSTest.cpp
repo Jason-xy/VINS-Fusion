@@ -159,7 +159,7 @@ int main(int argc, char** argv)
 
 			sensor_msgs::msg::NavSatFix gps_position;
 			gps_position.header.frame_id = "NED";
-			gps_position.header.stamp = rclcpp::Time(imgTime);
+			gps_position.header.stamp = rclcpp::Time(static_cast<double>(imgTime*1e9));
 			gps_position.status.status = navstat;
 			gps_position.status.service = numsats;
 			gps_position.latitude  = lat;
