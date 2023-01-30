@@ -349,7 +349,7 @@ void Estimator::processMeasurements()
 
             std_msgs::msg::Header header;
             header.frame_id = "world";
-            header.stamp = rclcpp::Time(feature.first);
+            header.stamp = rclcpp::Time(static_cast<int64_t>(feature.first*1e9));
 
             pubOdometry(*this, header);
             // cout << "5-1" << endl;

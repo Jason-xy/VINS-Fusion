@@ -58,7 +58,7 @@ void GlobalOptimization::inputOdom(double t, Eigen::Vector3d OdomP, Eigen::Quate
     lastQ = globalQ;
 
     geometry_msgs::msg::PoseStamped pose_stamped;
-    pose_stamped.header.stamp = rclcpp::Time(t);
+    pose_stamped.header.stamp = rclcpp::Time(static_cast<int64_t>(t*1e9));
     pose_stamped.header.frame_id = "world";
     pose_stamped.pose.position.x = lastP.x();
     pose_stamped.pose.position.y = lastP.y();
@@ -258,7 +258,7 @@ void GlobalOptimization::updateGlobalPath()
     for (iter = globalPoseMap.begin(); iter != globalPoseMap.end(); iter++)
     {
         geometry_msgs::msg::PoseStamped pose_stamped;
-        pose_stamped.header.stamp = rclcpp::Time(iter->first);
+        pose_stamped.header.stamp = rclcpp::Time(static_cast<int64_t>(iter->first*1e9));
         pose_stamped.header.frame_id = "world";
         pose_stamped.pose.position.x = iter->second[0];
         pose_stamped.pose.position.y = iter->second[1];
