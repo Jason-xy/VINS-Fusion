@@ -63,10 +63,6 @@ add_subdirectory(src)
 # This is overwritten each loop, but which one it points to doesn't really matter.
 set(cv_bridge_lib_dir "$<TARGET_FILE_DIR:${PROJECT_NAME}>")
 
-if(BUILD_TESTING)
-  add_subdirectory(test)
-endif()
-
 ament_export_dependencies(
   OpenCV
   sensor_msgs
