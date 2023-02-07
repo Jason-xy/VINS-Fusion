@@ -36,7 +36,7 @@ cd $(PATH_TO_YOUR_ROS2_WS)
 source ./install/setup.bash && source ./install/local_setup.bash
 
 # vins
-ros2 run vins_node $(PATH_TO_YOUR_VINS_CONFIG_FILE)
+ros2 run vins vins_node $(PATH_TO_YOUR_VINS_CONFIG_FILE)
 
 # Rviz2 visualization
 ros2 launch vins vins_rviz.launch.xml

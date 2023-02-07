@@ -73,9 +73,5 @@ install(TARGETS vins_node kitti_odom_test kitti_gps_test vins_lib
    LIBRARY DESTINATION lib
    RUNTIME DESTINATION bin
 )
-install(DIRECTORY
-   launch
-   DESTINATION share/${PROJECT_NAME}
-   )
 
 ament_package()
