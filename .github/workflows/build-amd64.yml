@@ -16,13 +16,13 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Run the build process with Docker
-          uses: addnab/docker-run-action@v3
-          with:
-              image: jasonxxxyyy/sky-explorer:runtime-cuda11.4-ros2-amd64
-              options: -v ${{ github.workspace }}:/root/ros2_ws/src
-              run: |
-                  rm /bin/sh && ln -s /bin/bash /bin/sh
-                  cd /root/ros2_ws
-                  source /opt/ros/foxy/setup.bash
-                  colcon build --symlink-install --allow-overriding cv_bridge --cmake-args -DCMAKE_BUILD_TYPE=Release
+      uses: addnab/docker-run-action@v3
+      with:
+        image: jasonxxxyyy/sky-explorer:runtime-cuda11.4-ros2-amd64
+        options: -v ${{ github.workspace }}:/root/ros2_ws/src
+        run: |
+          rm /bin/sh && ln -s /bin/bash /bin/sh
+          cd /root/ros2_ws
+          source /opt/ros/foxy/setup.bash
+          colcon build --symlink-install --allow-overriding cv_bridge --cmake-args -DCMAKE_BUILD_TYPE=Release
 
