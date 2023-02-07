@@ -1,5 +1,5 @@
 #!/bin/bash
-sudo docker run --rm \
+sudo docker -it run --rm \
     -v `pwd`:/root/ros2_ws/src \
     jasonxxxyyy/sky-explorer:runtime-cuda11.4-ros2-$1 \
     /bin/bash -c "cd /root/ros2_ws && \
