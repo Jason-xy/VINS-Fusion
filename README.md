@@ -1,16 +1,16 @@
 # VINS-Fusion for ROS2 with CUDA
 
-### Runtime platform
+## Runtime platform
 
 NVIDIA Jetson Xavier NX
 
-### Features
+## Features
 
 1. Executed via ros2 run or ros2 launch
 2. OpenCV-CUDA API
 3. Ceres-CUDA
 
-### Prerequisites
+## Prerequisites
 
 - System
   - Jetpack-5.0.2 ver.1 (Ubuntu 20.04)
@@ -19,8 +19,11 @@ NVIDIA Jetson Xavier NX
   - OpenCV 4.5.4 with CUDA
   - Ceres Solver-2.1.0 with CUDA
   - Eigen-3.3.9
+- Container
+  - Docker
+  - NVIDIA Container Toolkit
 
-### Build
+## Build
 
 ```shell
 cd $(PATH_TO_YOUR_ROS2_WS)/src
@@ -29,7 +32,7 @@ cd ..
 colcon build --symlink-install --allow-overriding cv_bridge
 ```
 
-### Run
+## Run
 
 ```shell
 cd $(PATH_TO_YOUR_ROS2_WS)
@@ -62,7 +65,41 @@ rosbags-convert foo.bag --dst /path/to/bar
 ros2 bag play /path/to/bar
 ```
 
-### Reference
+## Container support
+
+
+
+amd64 platform
+
+```shell
+./docker/amd64/run-amd64.sh
+```
+
+arm64 platform
+
+```shell
+./docker/arm64/run-arm64.sh
+```
+
+In order to fit for your own requirments, changeing the parameter in the script passed to the docker/scripts/vins_demo.py
+
+## Performance analysis
+
+In order to further improve the performance of the Jetson platform, we have carried out a detailed analysis of the efficiency and performance of the program，in order to find a path for further optimization in the project.
+
+### Install alalysis tools
+
+```shell
+sudo apt install valgrind
+```
+
+### Function call
+
+Function-call graph of original program
+
+![](doc/img/function-call-graph-origin.png)
+
+## Reference
 
 [HKUST-Aerial-Robotics/VINS-Fusion](https://github.com/HKUST-Aerial-Robotics/VINS-Fusion)
 
@@ -70,7 +107,7 @@ ros2 bag play /path/to/bar
 
 [pjrambo/VINS-Fusion-gpu](https://github.com/pjrambo/VINS-Fusion-gpu)
 
-## Original Readme: VINS-Fusion
+# Original Readme: VINS-Fusion
 
 ## An optimization-based multi-sensor state estimator
 
