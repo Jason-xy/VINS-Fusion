@@ -91,13 +91,22 @@ In order to further improve the performance of the Jetson platform, we have carr
 
 ```shell
 sudo apt install valgrind
+python3 -m pip install gprof2dot
 ```
 
 ### Function call
 
+Run commands below to generate the function-call graph of the program.
+
+```shell
+valgrind --tool=callgrind ./vins_node $(PATH_TO_YOUR_VINS_CONFIG_FILE)
+ros2 bag play $(PATH_TO_YOUR_ROS2_BAG_FILE)
+gprof2dot.py -f callgrind callgrind.out.XXX | dot -Tpng -o report.png
+```
+
 Function-call graph of original program
 
-![](doc/img/function-call-graph-origin.png)
+![Function-call graph of original program](doc/img/function-call-graph-origin.png)
 
 ## Reference
 
