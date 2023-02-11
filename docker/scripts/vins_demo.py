@@ -13,6 +13,7 @@ def argparser(argv):
     parser = argparse.ArgumentParser(description='VINS-Fusion Docker')
     parser.add_argument('--dataset_url', type=str, default='http://robotics.ethz.ch/~asl-datasets/ijrr_euroc_mav_dataset/machine_hall/MH_01_easy/MH_01_easy.bag', help='dataset url')
     parser.add_argument('--config', type=str, default='%s/config/euroc/euroc_stereo_imu_config.yaml' % BASE_DIR, help='config file')
+    parser.add_argument('--rviz', action='store_true', help='launch rviz')
     args = parser.parse_args(argv)
     return args
 
@@ -45,15 +46,19 @@ def play_rosbag(rosbag_path):
 
 def run_vins(config):
     CMD = 'bash -c \"source /opt/ros/foxy/setup.bash && source %s/../install/local_setup.bash && ros2 run vins vins_node %s\"' % (BASE_DIR, config)
-    sbp.Popen(CMD, shell=True)
-    CMD = 'bash -c \"source /opt/ros/foxy/setup.bash && source %s/../install/local_setup.bash && ros2 launch vins vins_rviz.launch.xml\"' % BASE_DIR
     os.system(CMD)
+
+def launch_rviz():
+    CMD = 'bash -c \"source /opt/ros/foxy/setup.bash && source %s/../install/local_setup.bash && ros2 launch vins vins_rviz.launch.xml\"' % BASE_DIR
+    sbp.Popen(CMD, shell=True)
 
 def main(argv):
     args = argparser(argv)
     rosbag_path = download_dataset(args.dataset_url)
     compile_vins()
     play_rosbag(rosbag_path)
+    if args.rviz:
+        launch_rviz()
     run_vins(args.config)
 
 if __name__ == '__main__':

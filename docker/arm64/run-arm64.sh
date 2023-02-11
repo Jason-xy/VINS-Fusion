@@ -1,6 +1,6 @@
 #!/bin/bash
 script_dir=$(cd $(dirname $0);pwd)
-sudo docker run --runtime nvidia -it --rm \
+sudo docker run --runtime nvidia -it \
 		--name vins \
 		--privileged \
 		--network host \
