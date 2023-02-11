@@ -81,7 +81,7 @@ arm64 platform
 ./docker/arm64/run-arm64.sh
 ```
 
-In order to fit for your own requirments, changeing the parameter in the script passed to the docker/scripts/vins_demo.py
+In order to fit for your own requirments, changing the parameter in the script passed to the docker/scripts/vins_demo.py
 
 ## Performance analysis
 
