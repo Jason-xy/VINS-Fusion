@@ -18,6 +18,9 @@
 #include <csignal>
 #include <opencv2/opencv.hpp>
 #include <eigen3/Eigen/Dense>
+#include <opencv2/cudaoptflow.hpp>
+#include <opencv2/cudaimgproc.hpp>
+#include <opencv2/cudaarithm.hpp>
 
 #include "camodocal/camera_models/CameraFactory.h"
 #include "camodocal/camera_models/CataCamera.h"
