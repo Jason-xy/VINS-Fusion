@@ -14,6 +14,7 @@ def argparser(argv):
     parser.add_argument('--dataset_url', type=str, default='http://robotics.ethz.ch/~asl-datasets/ijrr_euroc_mav_dataset/machine_hall/MH_01_easy/MH_01_easy.bag', help='dataset url')
     parser.add_argument('--config', type=str, default='%s/config/euroc/euroc_stereo_imu_config.yaml' % BASE_DIR, help='config file')
     parser.add_argument('--rviz', action='store_true', help='launch rviz')
+    parser.add_argument('--debug', action='store_true', help='debug mode')
     args = parser.parse_args(argv)
     return args
 
@@ -56,9 +57,9 @@ def main(argv):
     args = argparser(argv)
     rosbag_path = download_dataset(args.dataset_url)
     compile_vins()
-    play_rosbag(rosbag_path)
     if args.rviz:
         launch_rviz()
+    play_rosbag(rosbag_path)
     run_vins(args.config)
 
 if __name__ == '__main__':
