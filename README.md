@@ -104,15 +104,17 @@ ros2 bag play $(PATH_TO_YOUR_ROS2_BAG_FILE)
 gprof2dot -f callgrind callgrind.out.XXX | dot -Tpng -o report.png
 ```
 
-Function-call graph of original program
+1. Function-call graph of original program
 
 ![Function-call graph of original program](doc/img/function-call-graph-origin.png)
 
-Calculate PyrLKOpticalFlow by GPU
+2. Calculate PyrLKOpticalFlow by GPU
 
 ![Calculate PyrLKOpticalFlow by GPU](doc/img/report-Gpu_calcOpticalFlowPyrLK.png)
 
+3. Calculate goodFeaturesToTrack by GPU
 
+![Calculate goodFeaturesToTrack by GPU](doc/img/report-Gpu_goodFeaturesToTrack.png)
 
 ## Reference
 

@@ -40,6 +40,26 @@ static void Gpu_calcOpticalFlowPyrLK(	cv::InputArray 	prevImg,
     d_err.download(err);
 }
 
+static void Gpu_goodFeaturesToTrack(    cv::InputArray 	image,
+                                        cv::OutputArray 	corners,
+                                        int 	maxCorners,
+                                        double 	qualityLevel,
+                                        double 	minDistance,
+                                        cv::InputArray 	mask = cv::noArray(),
+                                        int 	blockSize = 3,
+                                        int 	gradientSize = 3,
+                                        bool 	useHarrisDetector = false,
+                                        double 	k = 0.04
+)
+{
+    cv::cuda::GpuMat d_image(image);
+    cv::cuda::GpuMat d_corners;
+
+    cv::Ptr<cv::cuda::CornersDetector> detector = cv::cuda::createGoodFeaturesToTrackDetector(d_image.type(), maxCorners, qualityLevel, minDistance);
+    detector->detect(d_image, d_corners);
+    d_corners.download(corners);
+}
+
 bool FeatureTracker::inBorder(const cv::Point2f &pt)
 {
     const int BORDER_SIZE = 1;
@@ -210,7 +230,7 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
                 cout << "mask is empty " << endl;
             if (mask.type() != CV_8UC1)
                 cout << "mask type wrong " << endl;
-            cv::goodFeaturesToTrack(cur_img, n_pts, MAX_CNT - cur_pts.size(), 0.01, MIN_DIST, mask);
+            Gpu_goodFeaturesToTrack(cur_img, n_pts, MAX_CNT - cur_pts.size(), 0.01, MIN_DIST, mask);
         }
         else
             n_pts.clear();
