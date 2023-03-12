@@ -1,4 +1,4 @@
-name: Compile-test-amd64
+name: Compile-test-arm64
 
 on:
   push:
@@ -16,5 +16,11 @@ jobs:
       uses: actions/checkout@v3
     -
       name: Start to Compile
-      run: ./docker/scripts/compile.sh amd64
+      run: ./docker/scripts/compile.sh
+    -
+      name: Upload Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: install.tar.gz
+        path: install.tar.gz
 
