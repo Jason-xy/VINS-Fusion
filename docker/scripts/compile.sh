@@ -1,6 +1,10 @@
 #!/bin/bash
 script_dir=$(cd $(dirname $0);pwd)
-docker run --rm --privileged multiarch/qemu-user-static:register --reset
+file=/usr/bin/qemu-aarch64-static
+if [ ! -f "$file" ]; then
+  wget https://github.com/multiarch/qemu-user-static/releases/download/v7.2.0-1/qemu-aarch64-static -o /usr/bin/qemu-aarch64-static
+fi
+
 docker run --rm \
         --network host \
         --privileged \
