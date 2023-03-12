@@ -1175,6 +1175,7 @@ void Estimator::optimization()
         options.max_solver_time_in_seconds = SOLVER_TIME * 4.0 / 5.0;
     else
         options.max_solver_time_in_seconds = SOLVER_TIME;
+    options.dense_linear_algebra_library_type = ceres::LAPACK;
     TicToc t_solver;
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
