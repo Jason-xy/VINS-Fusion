@@ -1,0 +1,20 @@
+name: Compile-test-amd64
+
+on:
+  push:
+    branches: [ "cuda" ]
+  
+  pull_request:
+    branches: [ "cuda" ]
+
+jobs:
+  Compile-vins-fusion-amd64:
+    runs-on: ubuntu-latest
+    steps:
+    -
+      name: Checkout
+      uses: actions/checkout@v3
+    -
+      name: Start to Compile
+      run: ./docker/scripts/compile.sh amd64
+
