@@ -8,7 +8,7 @@ on:
     branches: [ "cuda" ]
 
 jobs:
-  Compile-vins-fusion-amd64:
+  Compile-vins-fusion-arm64:
     runs-on: ubuntu-latest
     steps:
     -
