@@ -15,12 +15,17 @@ def argparser(argv):
     parser.add_argument('--config', type=str, default='%s/config/euroc/euroc_stereo_imu_config.yaml' % BASE_DIR, help='config file')
     parser.add_argument('--rviz', action='store_true', help='launch rviz')
     parser.add_argument('--debug', action='store_true', help='debug mode')
+    parser.add_argument('--pack', action='store_true', help='pack binary')
     args = parser.parse_args(argv)
     return args
 
 def compile_vins():
     CMD = 'bash -c \"source /opt/ros/foxy/setup.bash && cd %s && colcon build --symlink-install --allow-overriding cv_bridge --cmake-args -DCMAKE_BUILD_TYPE=Release\"' % os.path.join(BASE_DIR, '..')
-    sbp.run(CMD, shell=True, capture_output=True)
+    os.system(CMD)
+
+def pack_vins():
+    CMD = 'bash -c \"cd %s && tar -zcvhf src/install.tar.gz install && chmod 777 src/install.tar.gz\"' % os.path.join(BASE_DIR, '..')
+    os.system(CMD)
 
 def download_dataset(dataset_url):
     filename = wget.detect_filename(dataset_url)
@@ -42,7 +47,7 @@ def download_dataset(dataset_url):
     return ros2bag_path
 
 def play_rosbag(rosbag_path):
-    CMD = 'bash -c \"source /opt/ros/foxy/setup.bash && ros2 bag play %s\"' % rosbag_path
+    CMD = 'bash -c \"source /opt/ros/foxy/setup.bash && ros2 bag play -r 2 %s\"' % rosbag_path
     sbp.Popen(CMD, shell=True)
 
 def run_vins(config):
@@ -55,12 +60,15 @@ def launch_rviz():
 
 def main(argv):
     args = argparser(argv)
-    rosbag_path = download_dataset(args.dataset_url)
     compile_vins()
-    if args.rviz:
-        launch_rviz()
-    play_rosbag(rosbag_path)
-    run_vins(args.config)
+    if args.pack:
+        pack_vins()
+    else:
+        rosbag_path = download_dataset(args.dataset_url)
+        if args.rviz:
+            launch_rviz()
+        play_rosbag(rosbag_path)
+        run_vins(args.config)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
