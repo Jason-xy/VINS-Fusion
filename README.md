@@ -116,6 +116,10 @@ gprof2dot -f callgrind callgrind.out.XXX | dot -Tpng -o report.png
 
 ![Calculate goodFeaturesToTrack by GPU](doc/img/report-Gpu_goodFeaturesToTrack.png)
 
+3. Using LAPCK as dense linear algebra library
+
+![Calculate goodFeaturesToTrack by GPU](doc/img/report-Ceres_LAPCK.png)
+
 ## Reference
 
 [HKUST-Aerial-Robotics/VINS-Fusion](https://github.com/HKUST-Aerial-Robotics/VINS-Fusion)
