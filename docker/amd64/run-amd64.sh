@@ -1,6 +1,7 @@
 #!/bin/bash
+xhost +
 script_dir=$(cd $(dirname $0);pwd)
-docker run --gpus all -it \
+docker run -it \
 		--name vins \
 		--privileged \
 		--network host \

@@ -1,7 +1,7 @@
 #!/bin/bash
+xhost +
 script_dir=$(cd $(dirname $0);pwd)
-sudo docker run --runtime nvidia -it \
-		--name vins \
+docker run -it \
 		--privileged \
 		--network host \
 		-e DISPLAY=$DISPLAY \
@@ -11,4 +11,4 @@ sudo docker run --runtime nvidia -it \
 		-v /etc/enctune.conf:/etc/enctune.conf \
 		-v $script_dir/../../:/root/ros2_ws/src/ \
         jasonxxxyyy/sky-explorer:runtime-cuda11.4-ros2-arm64 \
-        /root/ros2_ws/src/docker/scripts/vins_demo.py
+		/root/ros2_ws/src/docker/scripts/vins_demo.py --rviz
