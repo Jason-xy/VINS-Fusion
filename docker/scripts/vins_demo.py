@@ -16,6 +16,8 @@ def argparser(argv):
     parser.add_argument('--rviz', action='store_true', help='launch rviz')
     parser.add_argument('--debug', action='store_true', help='debug mode')
     parser.add_argument('--pack', action='store_true', help='pack binary')
+    parser.add_argument('--demo', action='store_true', help='run demo')
+    parser.add_argument('--d435i', action='store_true', help='run with d435i')
     args = parser.parse_args(argv)
     return args
 
@@ -54,6 +56,15 @@ def run_vins(config):
     CMD = 'bash -c \"source /opt/ros/foxy/setup.bash && source %s/../../install/local_setup.bash && ros2 run vins vins_node %s\"' % (BASE_DIR, config)
     os.system(CMD)
 
+def realsense2_camera():
+    os.system('cp %s/config/realsense_d435i/rs_launch_vins.py %s/../../install/realsense2_camera/share/realsense2_camera/launch' % (BASE_DIR, BASE_DIR))
+    CMD = 'bash -c \"source /opt/ros/foxy/setup.bash && source %s/../../install/local_setup.bash && ros2 launch realsense2_camera rs_launch_vins.py\"' % (BASE_DIR)
+    sbp.Popen(CMD, shell=True)
+
+def run_loop_fusion(config):
+    CMD = 'bash -c \"source /opt/ros/foxy/setup.bash && source %s/../../install/local_setup.bash && ros2 run loop_fusion loop_fusion_node %s\"' % (BASE_DIR, config)
+    sbp.Popen(CMD, shell=True)
+
 def launch_rviz():
     CMD = 'bash -c \"source /opt/ros/foxy/setup.bash && source %s/../../install/local_setup.bash && ros2 launch vins vins_rviz.launch.xml\"' % BASE_DIR
     sbp.Popen(CMD, shell=True)
@@ -63,12 +74,18 @@ def main(argv):
     compile_vins()
     if args.pack:
         pack_vins()
-    else:
+    elif args.demo:
         rosbag_path = download_dataset(args.dataset_url)
         if args.rviz:
             launch_rviz()
         play_rosbag(rosbag_path)
         run_vins(args.config)
+    elif args.d435i:
+        if args.rviz:
+            launch_rviz()
+        realsense2_camera()
+        run_vins(os.path.join(BASE_DIR, 'config', 'realsense_d435i', 'realsense_stereo_imu_config.yaml'))
+        run_loop_fusion(os.path.join(BASE_DIR, 'config', 'realsense_d435i', 'realsense_stereo_imu_config.yaml'))
 
 if __name__ == '__main__':
     main(sys.argv[1:])
