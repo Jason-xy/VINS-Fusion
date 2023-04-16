@@ -1,4 +1,5 @@
 #!/bin/bash
+xhost +
 script_dir=$(cd $(dirname $0);pwd)
 sudo docker run --runtime nvidia --rm -it \
         --name vins \

@@ -1,4 +1,5 @@
 #!/bin/bash
+xhost +
 script_dir=$(cd $(dirname $0);pwd)
 docker run --gpus all --rm -it \
         --name vins \
