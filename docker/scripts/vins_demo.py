@@ -4,6 +4,7 @@ import subprocess as sbp
 import argparse
 import rosbags
 import wget
+import time
 import sys
 import os
 
@@ -18,11 +19,12 @@ def argparser(argv):
     parser.add_argument('--pack', action='store_true', help='pack binary')
     parser.add_argument('--demo', action='store_true', help='run demo')
     parser.add_argument('--d435i', action='store_true', help='run with d435i')
+    parser.add_argument('--bridge', action='store_true', help='launch ros1_bridge')
     args = parser.parse_args(argv)
     return args
 
 def compile_vins():
-    CMD = 'bash -c \"source /opt/ros/foxy/setup.bash && cd %s && colcon build --symlink-install --allow-overriding cv_bridge --cmake-args -DCMAKE_BUILD_TYPE=Release\"' % os.path.join(BASE_DIR, '..', '..')
+    CMD = 'bash -c \"source /opt/ros/foxy/setup.bash && cd %s && colcon build --symlink-install --allow-overriding cv_bridge --packages-skip ros1_bridge --cmake-args -DCMAKE_BUILD_TYPE=Release\"' % os.path.join(BASE_DIR, '..', '..')
     os.system(CMD)
 
 def pack_vins():
@@ -69,6 +71,42 @@ def launch_rviz():
     CMD = 'bash -c \"source /opt/ros/foxy/setup.bash && source %s/../../install/local_setup.bash && ros2 launch vins vins_rviz.launch.xml\"' % BASE_DIR
     sbp.Popen(CMD, shell=True)
 
+def compile_ros1_bridge():
+    CMD = '''
+    bash -c "
+    export ROS1_INSTALL_PATH=/opt/ros/noetic && \\
+    export ROS2_INSTALL_PATH=/opt/ros/foxy && \\
+    source /opt/ros/noetic/setup.bash && \\
+    source /opt/ros/foxy/setup.bash && \\
+    cd %s && \\
+    colcon build --symlink-install --packages-select ros1_bridge --cmake-force-configure
+    "
+    ''' % os.path.join(BASE_DIR, '..', '..')
+    os.system(CMD)
+
+def launch_ros1_bridge():
+    compile_ros1_bridge()
+    CMD = '''
+    bash -c "
+    source /opt/ros/noetic/setup.bash && \\
+    roscore &
+    "
+    '''
+    sbp.Popen(CMD, shell=True)
+    time.sleep(3)
+
+    CMD = '''
+    bash -c "
+    source /opt/ros/noetic/setup.bash && \\
+    source /opt/ros/foxy/setup.bash && \\
+    export ROS_MASTER_URI=http://localhost:11311 && \\
+    source %s/install/setup.bash && \\
+    ros2 run ros1_bridge dynamic_bridge
+    "
+    ''' % os.path.join(BASE_DIR, '..', '..')
+    sbp.Popen(CMD, shell=True)
+    time.sleep(3)
+
 def main(argv):
     args = argparser(argv)
     compile_vins()
@@ -79,6 +117,8 @@ def main(argv):
         if args.rviz:
             launch_rviz()
         play_rosbag(rosbag_path)
+        if args.bridge:
+            launch_ros1_bridge()
         run_vins(args.config)
     elif args.d435i:
         if args.rviz:

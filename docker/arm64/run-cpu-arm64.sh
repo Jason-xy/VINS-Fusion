@@ -1,6 +1,6 @@
 #!/bin/bash
 script_dir=$(cd $(dirname $0);pwd)
-sudo docker run --rm -it \
+docker run --rm -it \
         --name vins \
         --privileged \
         --network host \
@@ -11,4 +11,4 @@ sudo docker run --rm -it \
         -v /etc/enctune.conf:/etc/enctune.conf \
         -v $script_dir/../../../../:/root/ros2_ws/ \
         jasonxxxyyy/sky-explorer:runtime-cpu-ros2-arm64 \
-        /root/ros2_ws/src/VINS-Fusion/docker/scripts/vins_demo.py
+        /root/ros2_ws/src/VINS-Fusion/docker/scripts/vins_demo.py --demo
