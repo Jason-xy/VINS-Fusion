@@ -21,6 +21,11 @@
 #include "estimator/parameters.h"
 #include "utility/visualization.h"
 
+#define BACKWARD_HAS_BFD 1
+#define BACKWARD_HAS_DW 1
+#include <backward.hpp>
+backward::SignalHandling sh;
+
 Estimator estimator;
 
 queue<sensor_msgs::msg::Imu::ConstPtr> imu_buf;

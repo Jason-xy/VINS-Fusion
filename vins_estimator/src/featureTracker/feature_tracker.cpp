@@ -60,6 +60,65 @@
 //     d_corners.download(corners);
 // }
 
+#define LET_WIDTH 256 // 512
+#define LET_HEIGHT 192 // 384
+
+struct greaterThanPtr
+{
+    bool operator () (const float * a, const float * b) const
+    // Ensure a fully deterministic result of the sort
+    { return (*a > *b) ? true : (*a < *b) ? false : (a > b); }
+};
+
+void FeatureTracker::LET_NET_calcOpticalFlowPyrLK( cv::Mat 	&prevImg,
+                                          cv::Mat	&nextImg,
+                                          std::vector<cv::Point2f>	&prevPts,
+                                          std::vector<cv::Point2f> 	&nextPts,
+                                          std::vector<uchar> 	&status,
+                                          std::vector<float> 	&err,
+                                          cv::Size 	winSize = cv::Size(21, 21),
+                                          int 	maxLevel = 3,
+                                          cv::TermCriteria 	criteria = cv::TermCriteria(cv::TermCriteria::COUNT+cv::TermCriteria::EPS, 30, 0.01),
+                                          int 	flags = 0,
+                                          double 	minEigThreshold = 1e-4
+                                      )
+{
+    std::vector<cv::Point2f> corners1, corners2;
+    int w0 = nextImg.cols; int h0 = nextImg.rows;
+    float k_w = float(w0) / float(LET_WIDTH);
+    float k_h = float(h0) / float(LET_HEIGHT);
+    // resize prevPts to corners1
+    corners1.resize(prevPts.size());
+    for (int i = 0; i < int(prevPts.size()); i++)
+    {
+        corners1[i].x = prevPts[i].x / k_w;
+        corners1[i].y = prevPts[i].y / k_h;
+    }
+    // check the input of calcOpticalFlowPyrLK
+    if(prevImg.empty())
+        cout << "prevImg is empty " << endl;
+    if(nextImg.empty())
+        cout << "nextImg is empty " << endl;
+    if(prevPts.empty())
+        cout << "prevPts is empty " << endl;
+    cv::calcOpticalFlowPyrLK(last_desc, desc, corners1, corners2,
+                                status,err,cv::Size(21, 21),5);
+    // resize corners2 to nextPts
+    nextPts.resize(corners2.size());
+    for (int i = 0; i < int(corners2.size()); i++)
+    {
+        nextPts[i].x = corners2[i].x * k_w;
+        nextPts[i].y = corners2[i].y * k_h;
+    }
+    // subpixel refinement
+    cv::cornerSubPix(gray,
+                        nextPts,
+                        cv::Size(3, 3),
+                        cv::Size(-1, -1),
+                        cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS,
+                        5, 0.01));
+}
+
 bool FeatureTracker::inBorder(const cv::Point2f &pt)
 {
     const int BORDER_SIZE = 1;
@@ -78,10 +137,16 @@ double distance(cv::Point2f pt1, cv::Point2f pt2)
 
 void reduceVector(vector<cv::Point2f> &v, vector<uchar> status)
 {
+    if (v.size() != status.size()) {
+        throw std::invalid_argument("Vectors v and status must be the same size.");
+    }
+
     int j = 0;
-    for (int i = 0; i < int(v.size()); i++)
-        if (status[i])
+    for (int i = 0; i < int(v.size()); i++) {
+        if (status[i]) {
             v[j++] = v[i];
+        }
+    }
     v.resize(j);
 }
 
@@ -96,6 +161,7 @@ void reduceVector(vector<int> &v, vector<uchar> status)
 
 FeatureTracker::FeatureTracker()
 {
+    let_init();
     stereo_cam = 0;
     n_id = 0;
     hasPrediction = false;
@@ -156,6 +222,12 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
             clahe->apply(rightImg, rightImg);
     }
     */
+
+    cv::Mat cur_img_bgr;
+    cv::cvtColor(cur_img, cur_img_bgr, cv::COLOR_GRAY2BGR);
+    let_net(cur_img_bgr);
+    gray = cur_img.clone();
+
     cur_pts.clear();
 
     if (prev_pts.size() > 0)
@@ -166,9 +238,8 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
         if(hasPrediction)
         {
             cur_pts = predict_pts;
-            calcOpticalFlowPyrLK(prev_img, cur_img, prev_pts, cur_pts, status, err, cv::Size(21, 21), 1, 
-            cv::TermCriteria(cv::TermCriteria::COUNT+cv::TermCriteria::EPS, 30, 0.01), cv::OPTFLOW_USE_INITIAL_FLOW);
-            
+            LET_NET_calcOpticalFlowPyrLK(prev_img, cur_img, prev_pts, cur_pts, status, err, cv::Size(21, 21), 1, cv::TermCriteria(cv::TermCriteria::COUNT+cv::TermCriteria::EPS, 30, 0.01), cv::OPTFLOW_USE_INITIAL_FLOW);
+
             int succ_num = 0;
             for (size_t i = 0; i < status.size(); i++)
             {
@@ -176,18 +247,19 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
                     succ_num++;
             }
             if (succ_num < 10)
-               calcOpticalFlowPyrLK(prev_img, cur_img, prev_pts, cur_pts, status, err, cv::Size(21, 21), 3);
+               LET_NET_calcOpticalFlowPyrLK(prev_img, cur_img, prev_pts, cur_pts, status, err, cv::Size(21, 21), 3);
         }
-        else
-            calcOpticalFlowPyrLK(prev_img, cur_img, prev_pts, cur_pts, status, err, cv::Size(21, 21), 3);
+        else{
+            LET_NET_calcOpticalFlowPyrLK(prev_img, cur_img, prev_pts, cur_pts, status, err, cv::Size(21, 21), 3);
+        }
+
         // reverse check
         if(FLOW_BACK)
         {
             vector<uchar> reverse_status;
             vector<cv::Point2f> reverse_pts = prev_pts;
-            calcOpticalFlowPyrLK(cur_img, prev_img, cur_pts, reverse_pts, reverse_status, err, cv::Size(21, 21), 1, 
-            cv::TermCriteria(cv::TermCriteria::COUNT+cv::TermCriteria::EPS, 30, 0.01), cv::OPTFLOW_USE_INITIAL_FLOW);
-            //calcOpticalFlowPyrLK(cur_img, prev_img, cur_pts, reverse_pts, reverse_status, err, cv::Size(21, 21), 3); 
+            LET_NET_calcOpticalFlowPyrLK(cur_img, prev_img, cur_pts, reverse_pts, reverse_status, err, cv::Size(21, 21), 1, cv::TermCriteria(cv::TermCriteria::COUNT+cv::TermCriteria::EPS, 30, 0.01), cv::OPTFLOW_USE_INITIAL_FLOW);
+            //calcOpticalFlowPyrLK(cur_img, prev_img, cur_pts, reverse_pts, reverse_status, err, cv::Size(21, 21), 3);
             for(size_t i = 0; i < status.size(); i++)
             {
                 if(status[i] && reverse_status[i] && distance(prev_pts[i], reverse_pts[i]) <= 0.5)
@@ -198,7 +270,7 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
                     status[i] = 0;
             }
         }
-        
+
         for (int i = 0; i < int(cur_pts.size()); i++)
             if (status[i] && !inBorder(cur_pts[i]))
                 status[i] = 0;
@@ -230,7 +302,23 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
                 cout << "mask is empty " << endl;
             if (mask.type() != CV_8UC1)
                 cout << "mask type wrong " << endl;
-            goodFeaturesToTrack(cur_img, n_pts, MAX_CNT - cur_pts.size(), 0.01, MIN_DIST, mask);
+            cv::resize(mask, mask, cv::Size(LET_WIDTH, LET_HEIGHT));
+            letFeaturesToTrack(score, n_pts, MAX_CNT - cur_pts.size(), 0.0001, MIN_DIST, mask);
+            int w0 = cur_img.cols; int h0 = cur_img.rows;
+            float k_w = float(w0) / float(LET_WIDTH);
+            float k_h = float(h0) / float(LET_HEIGHT);
+            for (auto & n_pt : n_pts)
+            {
+                n_pt.x *= k_w;
+                n_pt.y *= k_h;
+            }
+            // subpixel refinement
+            cv::cornerSubPix(gray,
+                             n_pts,
+                             cv::Size(3, 3),
+                             cv::Size(-1, -1),
+                             cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS,
+                             5, 0.01));
         }
         else
             n_pts.clear();
@@ -262,11 +350,11 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
             vector<uchar> status, statusRightLeft;
             vector<float> err;
             // cur left ---- cur right
-            calcOpticalFlowPyrLK(cur_img, rightImg, cur_pts, cur_right_pts, status, err, cv::Size(21, 21), 3);
+            LET_NET_calcOpticalFlowPyrLK(cur_img, rightImg, cur_pts, cur_right_pts, status, err, cv::Size(21, 21), 3);
             // reverse check cur right ---- cur left
             if(FLOW_BACK)
             {
-                calcOpticalFlowPyrLK(rightImg, cur_img, cur_right_pts, reverseLeftPts, statusRightLeft, err, cv::Size(21, 21), 3);
+                LET_NET_calcOpticalFlowPyrLK(rightImg, cur_img, cur_right_pts, reverseLeftPts, statusRightLeft, err, cv::Size(21, 21), 3);
                 for(size_t i = 0; i < status.size(); i++)
                 {
                     if(status[i] && statusRightLeft[i] && inBorder(cur_right_pts[i]) && distance(cur_pts[i], reverseLeftPts[i]) <= 0.5)
@@ -464,7 +552,7 @@ vector<cv::Point2f> FeatureTracker::ptsVelocity(vector<int> &ids, vector<cv::Poi
     if (!prev_id_pts.empty())
     {
         double dt = cur_time - prev_time;
-        
+
         for (unsigned int i = 0; i < pts.size(); i++)
         {
             std::map<int, cv::Point2f>::iterator it;
@@ -520,7 +608,7 @@ void FeatureTracker::drawTrack(const cv::Mat &imLeft, const cv::Mat &imRight,
             //cv::line(imTrack, leftPt, rightPt, cv::Scalar(0, 255, 0), 1, 8, 0);
         }
     }
-    
+
     map<int, cv::Point2f>::iterator mapIt;
     for (size_t i = 0; i < curLeftIds.size(); i++)
     {
@@ -592,4 +680,179 @@ void FeatureTracker::removeOutliers(set<int> &removePtsIds)
 cv::Mat FeatureTracker::getTrackImage()
 {
     return imTrack;
+}
+
+void FeatureTracker::letFeaturesToTrack(cv::InputArray image,
+                                             cv::OutputArray _corners,
+                                             int maxCorners,
+                                             double qualityLevel,
+                                             double minDistance,
+                                             cv::InputArray _mask, int blockSize)
+{
+    CV_Assert(qualityLevel > 0 && minDistance >= 0 && maxCorners >= 0);
+    CV_Assert(_mask.empty() || (_mask.type() == CV_8UC1 && _mask.sameSize(image)));
+
+    cv::Mat eig = image.getMat(), tmp;
+    double maxVal = 0;
+    cv::minMaxLoc(eig, 0, &maxVal, 0, 0, _mask);
+    cv::threshold(eig, eig, maxVal * qualityLevel, 0, cv::THRESH_TOZERO);
+    cv::dilate(eig, tmp, cv::Mat());
+
+    cv::Size imgsize = eig.size();
+    std::vector<const float*> tmpCorners;
+
+    cv::Mat Mask = _mask.getMat();
+    for( int y = 1; y < imgsize.height - 1; y++ )
+    {
+        const float* eig_data = (const float*)eig.ptr(y);
+        const float* tmp_data = (const float*)tmp.ptr(y);
+        const uchar* mask_data = mask.data ? mask.ptr(y) : 0;
+
+        for( int x = 1; x < imgsize.width - 1; x++ )
+        {
+            float val = eig_data[x];
+            if( val != 0 && val == tmp_data[x] && (!mask_data || mask_data[x]) )
+                tmpCorners.push_back(eig_data + x);
+        }
+    }
+
+    std::vector<cv::Point2f> corners;
+    std::vector<float> cornersQuality;
+    size_t i, j, total = tmpCorners.size(), ncorners = 0;
+
+    if (total == 0)
+    {
+        _corners.release();
+        return;
+    }
+
+    std::sort( tmpCorners.begin(), tmpCorners.end(), greaterThanPtr());
+
+    if (minDistance >= 1)
+    {
+        // Partition the image into larger grids
+        int w = eig.cols;
+        int h = eig.rows;
+
+        const int cell_size = cvRound(minDistance);
+        const int grid_width = (w + cell_size - 1) / cell_size;
+        const int grid_height = (h + cell_size - 1) / cell_size;
+
+        std::vector<std::vector<cv::Point2f> > grid(grid_width*grid_height);
+
+        minDistance *= minDistance;
+
+        for( i = 0; i < total; i++ )
+        {
+            int ofs = (int)((const uchar*)tmpCorners[i] - eig.ptr());
+            int y = (int)(ofs / eig.step);
+            int x = (int)((ofs - y*eig.step)/sizeof(float));
+
+            bool good = true;
+
+            int x_cell = x / cell_size;
+            int y_cell = y / cell_size;
+
+            int x1 = x_cell - 1;
+            int y1 = y_cell - 1;
+            int x2 = x_cell + 1;
+            int y2 = y_cell + 1;
+
+            // boundary check
+            x1 = std::max(0, x1);
+            y1 = std::max(0, y1);
+            x2 = std::min(grid_width-1, x2);
+            y2 = std::min(grid_height-1, y2);
+
+            for( int yy = y1; yy <= y2; yy++ )
+            {
+                for( int xx = x1; xx <= x2; xx++ )
+                {
+                    std::vector <cv::Point2f> &m = grid[yy*grid_width + xx];
+
+                    if( m.size() )
+                    {
+                        for(j = 0; j < m.size(); j++)
+                        {
+                            float dx = x - m[j].x;
+                            float dy = y - m[j].y;
+
+                            if( dx*dx + dy*dy < minDistance )
+                            {
+                                good = false;
+                                goto break_out;
+                            }
+                        }
+                    }
+                }
+            }
+
+            break_out:
+
+            if (good)
+            {
+                grid[y_cell*grid_width + x_cell].push_back(cv::Point2f((float)x, (float)y));
+
+                cornersQuality.push_back(*tmpCorners[i]);
+
+                corners.push_back(cv::Point2f((float)x, (float)y));
+                ++ncorners;
+
+                if( maxCorners > 0 && (int)ncorners == maxCorners )
+                    break;
+            }
+        }
+    }
+    else
+    {
+        for( i = 0; i < total; i++ )
+        {
+            cornersQuality.push_back(*tmpCorners[i]);
+
+            int ofs = (int)((const uchar*)tmpCorners[i] - eig.ptr());
+            int y = (int)(ofs / eig.step);
+            int x = (int)((ofs - y*eig.step)/sizeof(float));
+
+            corners.push_back(cv::Point2f((float)x, (float)y));
+            ++ncorners;
+
+            if( maxCorners > 0 && (int)ncorners == maxCorners )
+                break;
+        }
+    }
+
+    cv::Mat(corners).convertTo(_corners, _corners.fixedType() ? _corners.type() : CV_32F);
+}
+
+void FeatureTracker::let_init(){
+    score = cv::Mat(LET_HEIGHT, LET_WIDTH, CV_32FC1);
+    desc = cv::Mat(LET_HEIGHT, LET_WIDTH, CV_8UC3);
+    last_desc = cv::Mat(LET_HEIGHT, LET_WIDTH, CV_8UC3);
+    net.load_param("/root/ros2_ws/src/VINS-Fusion/LET-NET/model/model.param");
+    net.load_model("/root/ros2_ws/src/VINS-Fusion/LET-NET/model/model.bin");
+}
+
+void FeatureTracker::let_net(const cv::Mat& image_bgr) {
+    last_desc = desc.clone();
+    cv::Mat img;
+    cv::resize(image_bgr, img, cv::Size(LET_WIDTH, LET_HEIGHT));
+    ncnn::Extractor ex = net.create_extractor();
+    ex.set_light_mode(true);
+    // opencv to ncnn
+    in = ncnn::Mat::from_pixels(img.data, ncnn::Mat::PIXEL_BGR, img.cols, img.rows);
+    in.substract_mean_normalize(mean_vals, norm_vals);
+    // extract
+    ex.input("input", in);
+    ex.extract("score", out1);
+    ex.extract("descriptor", out2);
+    // ncnn to opencv
+    out1.substract_mean_normalize(mean_vals_inv, norm_vals_inv);
+    out2.substract_mean_normalize(mean_vals_inv, norm_vals_inv);
+
+//    out1.to_pixels(score.data, ncnn::Mat::PIXEL_GRAY);
+    memcpy((uchar*)score.data, out1.data, LET_HEIGHT*LET_WIDTH*sizeof(float));
+    cv::Mat desc_tmp(LET_HEIGHT, LET_WIDTH, CV_8UC3);
+    out2.to_pixels(desc_tmp.data, ncnn::Mat::PIXEL_BGR);
+    desc = desc_tmp.clone();
+    cv::imwrite("desc.png", desc);
 }

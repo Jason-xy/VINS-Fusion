@@ -28,6 +28,10 @@
 #include "../estimator/parameters.h"
 #include "../utility/tic_toc.h"
 
+// LET-NET
+#include "net.h"
+#define LET_NET
+
 using namespace std;
 using namespace camodocal;
 using namespace Eigen;
@@ -68,6 +72,27 @@ public:
     cv::Mat getTrackImage();
     bool inBorder(const cv::Point2f &pt);
 
+    void letFeaturesToTrack(cv::InputArray image,
+                            cv::OutputArray corners,
+                            int maxCorners,
+                            double qualityLevel,
+                            double minDistance,
+                            cv::InputArray mask, int blockSize=3);
+    void let_init();
+    void let_net(const cv::Mat& image_bgr);
+    void LET_NET_calcOpticalFlowPyrLK(  cv::Mat 	&prevImg,
+                                        cv::Mat	&nextImg,
+                                        std::vector<cv::Point2f> 	&prevPts,
+                                        std::vector<cv::Point2f> 	&nextPts,
+                                        std::vector<uchar> 	&status,
+                                        std::vector<float> 	&err,
+                                        cv::Size 	winSize,
+                                        int 	maxLevel,
+                                        cv::TermCriteria 	criteria,
+                                        int 	flags,
+                                        double 	minEigThreshold
+                                        );
+
     int row, col;
     cv::Mat imTrack;
     cv::Mat mask;
@@ -90,4 +115,15 @@ public:
     bool stereo_cam;
     int n_id;
     bool hasPrediction;
+
+    // LET-NET
+    cv::Mat score;
+    cv::Mat desc, last_desc, gray;
+    const float mean_vals[3] = {0, 0, 0};
+    const float norm_vals[3] = {1.0/255.0, 1.0/255.0, 1.0/255.0};
+    const float mean_vals_inv[3] = {0, 0, 0};
+    const float norm_vals_inv[3] = {255.f, 255.f, 255.f};
+    ncnn::Net net;
+    ncnn::Mat in;
+    ncnn::Mat out1, out2;
 };

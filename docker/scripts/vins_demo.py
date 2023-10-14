@@ -12,7 +12,7 @@ BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..')
 def argparser(argv):
     parser = argparse.ArgumentParser(description='VINS-Fusion Docker')
     parser.add_argument('--dataset_url', type=str, default='http://robotics.ethz.ch/~asl-datasets/ijrr_euroc_mav_dataset/machine_hall/MH_01_easy/MH_01_easy.bag', help='dataset url')
-    parser.add_argument('--config', type=str, default='%s/VINS-Fusion/config/euroc/euroc_stereo_imu_config.yaml' % os.path.join(BASE_DIR, '..'), help='config file')
+    parser.add_argument('--config', type=str, default='%s/VINS-Fusion/config/euroc/euroc_mono_imu_config.yaml' % os.path.join(BASE_DIR, '..'), help='config file')
     parser.add_argument('--rviz', action='store_true', help='launch rviz')
     parser.add_argument('--debug', action='store_true', help='debug mode')
     parser.add_argument('--pack', action='store_true', help='pack binary')
@@ -22,7 +22,7 @@ def argparser(argv):
     return args
 
 def compile_vins():
-    CMD = 'bash -c \"source /opt/ros/foxy/setup.bash && cd %s && colcon build --symlink-install --allow-overriding cv_bridge --cmake-args -DCMAKE_BUILD_TYPE=Release\"' % os.path.join(BASE_DIR, '..', '..')
+    CMD = 'bash -c \"source /opt/ros/foxy/setup.bash && cd %s && colcon build --symlink-install --allow-overriding cv_bridge --cmake-args -DCMAKE_CXX_FLAGS=-w -DCMAKE_BUILD_TYPE=Debug\"' % os.path.join(BASE_DIR, '..', '..')
     os.system(CMD)
 
 def pack_vins():
