@@ -33,5 +33,6 @@ RUN git clone https://github.com/bombela/backward-cpp.git && \
     apt-get update && \
     apt-get install -y \
     libdw-dev \
+    binutils-dev \
     libunwind-dev && \
     apt-get clean
