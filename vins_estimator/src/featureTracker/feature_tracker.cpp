@@ -222,11 +222,19 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
             clahe->apply(rightImg, rightImg);
     }
     */
-
     cv::Mat cur_img_bgr;
-    cv::cvtColor(cur_img, cur_img_bgr, cv::COLOR_GRAY2BGR);
+    if(cur_img.channels() == 3)
+    {
+        cur_img_bgr = cur_img.clone();
+        cv::cvtColor(cur_img, cur_img, cv::COLOR_RGB2GRAY);
+        gray = cur_img.clone();
+    }
+    else
+    {
+        gray = cur_img.clone();
+        cv::cvtColor(cur_img, cur_img_bgr, cv::COLOR_GRAY2RGB);
+    }
     let_net(cur_img_bgr);
-    gray = cur_img.clone();
 
     cur_pts.clear();
 
@@ -820,7 +828,7 @@ void FeatureTracker::letFeaturesToTrack(cv::InputArray image,
                 break;
         }
     }
-
+    ROS_INFO("[Find]: %lu corners", corners.size());
     cv::Mat(corners).convertTo(_corners, _corners.fixedType() ? _corners.type() : CV_32F);
 }
 

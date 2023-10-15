@@ -68,8 +68,30 @@ cv::Mat getImageFromMsg(const sensor_msgs::msg::Image::ConstPtr &img_msg)
         img.encoding = "mono8";
         ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO8);
     }
+    else if (img_msg->encoding == "bgr8")
+    {
+        sensor_msgs::msg::Image img;
+        img.header = img_msg->header;
+        img.height = img_msg->height;
+        img.width = img_msg->width;
+        img.is_bigendian = img_msg->is_bigendian;
+        img.step = img_msg->step;
+        img.data = img_msg->data;
+        img.encoding = "bgr8";
+        ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::BGR8);
+    }
     else
-        ptr = cv_bridge::toCvCopy(img_msg, sensor_msgs::image_encodings::MONO8);
+    {
+        try
+        {
+            ptr = cv_bridge::toCvCopy(img_msg, sensor_msgs::image_encodings::MONO8);
+        }
+        catch (cv_bridge::Exception &e)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "cv_bridge exception: %s", e.what());
+            return cv::Mat();
+        }
+    }
 
     cv::Mat img = ptr->image.clone();
     return img;

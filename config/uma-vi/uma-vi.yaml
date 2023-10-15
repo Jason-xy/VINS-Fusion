@@ -2,31 +2,30 @@
 
 #common parameters
 #support: 1 imu 1 cam; 1 imu 2 cam: 2 cam; 
-imu: 1         
-num_of_cam: 1  
+imu: 1
+num_of_cam: 1
 
 imu_topic: "/imu0"
 image0_topic: "/cam0/image_raw"
 image1_topic: "/cam1/image_raw"
 output_path: "~/output/"
 
-cam0_calib: "cam0_mei.yaml"
+cam0_calib: "cam0_pinhole.yaml"
 cam1_calib: "cam1_mei.yaml"
-image_width: 752
-image_height: 480
-   
+image_width: 512 # 1024
+image_height: 384 # 768
 
 # Extrinsic parameter between IMU and Camera.
-estimate_extrinsic: 0   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.
+estimate_extrinsic: 1   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.
                         # 1  Have an initial guess about extrinsic parameters. We will optimize around your initial guess.
 
 body_T_cam0: !!opencv-matrix
    rows: 4
    cols: 4
    dt: d
-   data: [0.0148655429818, -0.999880929698, 0.00414029679422, -0.0216401454975,
-           0.999557249008, 0.0149672133247, 0.025715529948,  -0.064676986768,
-           -0.0257744366974, 0.00375618835797, 0.999660727178, 0.00981073058949,
+   data: [-0.9999193557683889, 0.0078087424182379074, 0.010015263430135759, 0.04560803849154623,
+           -0.007982464004835765, -0.9998163145030406, -0.017424624012229308, 0.11460657726930963,
+           0.009877359370849279, -0.017503165296644745, 0.9997980180898823, 0.00939792035366669,
            0, 0, 0, 1]
 
 #Multiple thread support
@@ -46,10 +45,10 @@ max_num_iterations: 8   # max solver itrations, to guarantee real time
 keyframe_parallax: 10.0 # keyframe selection threshold (pixel)
 
 #imu parameters       The more accurate parameters you provide, the better performance
-acc_n: 0.1          # accelerometer measurement noise standard deviation. 
-gyr_n: 0.01         # gyroscope measurement noise standard deviation.     
-acc_w: 0.001        # accelerometer bias random work noise standard deviation.  
-gyr_w: 0.0001       # gyroscope bias random work noise standard deviation.     
+acc_n: 0.16          # accelerometer measurement noise standard deviation. #0.2   0.04
+gyr_n: 0.01         # gyroscope measurement noise standard deviation.     #0.05  0.004
+acc_w: 0.0001         # accelerometer bias random work noise standard deviation.  #0.02
+gyr_w: 2.6e-4       # gyroscope bias random work noise standard deviation.     #4.0e-5
 g_norm: 9.81007     # gravity magnitude
 
 #unsynchronization parameters
